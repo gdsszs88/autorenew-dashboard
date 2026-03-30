@@ -157,6 +157,7 @@ export default function ClientPortal() {
     setCurrentOrderId(null);
     setPayUrl(null);
     setError("");
+    if (pollingRef.current) clearInterval(pollingRef.current);
     setTab("checkout");
   };
 
