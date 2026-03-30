@@ -1,5 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Create HTTP client that skips SSL certificate verification
+// (needed for self-signed certs commonly used by 3x-ui panels)
+let unsafeClient: Deno.HttpClient | undefined;
+try {
+  unsafeClient = Deno.createHttpClient({ caCerts: [] });
+} catch {
+  console.warn("Could not create unsafe HTTP client, falling back to default");
+}
+
+function fetchUnsafe(url: string, init?: RequestInit): Promise<Response> {
+  if (unsafeClient) {
+    return fetch(url, { ...init, client: unsafeClient } as any);
+  }
+  return fetch(url, init);
+}
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
