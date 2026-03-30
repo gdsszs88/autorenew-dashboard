@@ -1,5 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { hmac } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
+
+// MD5 HMAC using Web Crypto API
+async function hmacMd5(key: string, message: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw", encoder.encode(key), { name: "HMAC", hash: "MD5" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -135,11 +144,10 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
 }
 
 // Verify Hupi signature
-function verifyHupiSign(params: Record<string, string>, appSecret: string): boolean {
-  // Sort keys alphabetically, exclude 'hash'
+async function verifyHupiSign(params: Record<string, string>, appSecret: string): Promise<boolean> {
   const keys = Object.keys(params).filter(k => k !== "hash" && params[k] !== "").sort();
   const signStr = keys.map(k => `${k}=${params[k]}`).join("&");
-  const expectedHash = hmac("md5", appSecret, signStr, "utf-8", "hex") as string;
+  const expectedHash = await hmacMd5(appSecret, signStr);
   return expectedHash.toLowerCase() === (params.hash || "").toLowerCase();
 }
 
@@ -196,7 +204,7 @@ Deno.serve(async (req) => {
         ? config.hupi_wechat_app_secret
         : config.hupi_alipay_app_secret;
 
-      if (appSecret && !verifyHupiSign(params, appSecret)) {
+      if (appSecret && !(await verifyHupiSign(params, appSecret))) {
         console.error("Invalid Hupi signature");
         return new Response("fail", { headers: corsHeaders });
       }
@@ -295,7 +303,7 @@ Deno.serve(async (req) => {
           // Generate signature
           const sortedKeys = Object.keys(hupiParams).filter(k => hupiParams[k] !== "").sort();
           const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&");
-          const hash = hmac("md5", appSecret, signStr, "utf-8", "hex") as string;
+          const hash = await hmacMd5(appSecret, signStr);
           hupiParams.hash = hash;
 
           // Call Hupi API
