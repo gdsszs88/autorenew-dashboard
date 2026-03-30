@@ -408,7 +408,7 @@ export default function ClientPortal() {
               <h3 className="font-bold mb-4">请选择支付方式</h3>
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {config.hupi_wechat && (
-                  <button onClick={() => setSelectedMethod("wechat")} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
+                  <button onClick={() => { setSelectedMethod("wechat"); setCurrentOrderId(null); setPayUrl(null); setError(""); }} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
                     <Smartphone className="w-8 h-8 mb-2 text-success" />
                     <span className="font-bold">微信支付</span>
                   </button>
