@@ -16,8 +16,7 @@ function verifyToken(token: string): string | null {
 }
 
 // Helper: Login to 3x-ui panel and get session cookie
-async function login3xui(panelUrl: string, username: string, password: string): Promise<string | null> {
-  // Normalize URL: remove trailing slash, append /login
+async function login3xui(panelUrl: string, username: string, password: string): Promise<{ cookie: string | null; error?: string }> {
   const baseUrl = panelUrl.replace(/\/+$/, "");
   const loginUrl = `${baseUrl}/login`;
   console.log("Attempting 3x-ui login at:", loginUrl);
@@ -26,29 +25,44 @@ async function login3xui(panelUrl: string, username: string, password: string): 
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-      redirect: "manual",
     });
+
+    console.log("3x-ui login response status:", res.status);
+    const resBody = await res.text();
+    console.log("3x-ui login response body:", resBody.substring(0, 500));
 
     // Extract Set-Cookie header
     const setCookie = res.headers.get("set-cookie");
+    console.log("3x-ui set-cookie:", setCookie);
+
+    let cookie: string | null = null;
     if (setCookie) {
-      // Extract session cookie (3x-ui-session or session)
       const match = setCookie.match(/([^=]+=[^;]+)/);
-      return match ? match[1] : null;
+      cookie = match ? match[1] : null;
     }
 
-    // Some versions return JSON with success flag
-    if (res.ok) {
-      const body = await res.json();
-      if (body.success) {
-        const cookies = res.headers.get("set-cookie");
-        return cookies?.match(/([^=]+=[^;]+)/)?.[1] || null;
+    // Parse response body
+    try {
+      const json = JSON.parse(resBody);
+      if (json.success === false) {
+        return { cookie: null, error: json.msg || "登录失败：账号或密码错误" };
       }
+      if (json.success === true && cookie) {
+        return { cookie };
+      }
+      // If success but no cookie, try to find it in response headers
+      if (json.success === true) {
+        return { cookie: null, error: "登录成功但未获取到 Session Cookie" };
+      }
+    } catch {
+      // Not JSON response
     }
-    return null;
+
+    if (cookie) return { cookie };
+    return { cookie: null, error: `面板返回状态码 ${res.status}，未获取到登录凭证` };
   } catch (err) {
     console.error("3x-ui login failed:", err);
-    return null;
+    return { cookie: null, error: `无法连接到面板: ${String(err).substring(0, 200)}` };
   }
 }
 
