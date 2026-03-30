@@ -142,13 +142,13 @@ Deno.serve(async (req) => {
         });
       }
 
-      const cookie = await login3xui(testUrl, testUser, testPass);
-      if (cookie) {
+      const result = await login3xui(testUrl, testUser, testPass);
+      if (result.cookie) {
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        return new Response(JSON.stringify({ success: false, error: "无法连接到面板，请检查地址和账号密码" }), {
+        return new Response(JSON.stringify({ success: false, error: result.error || "无法连接到面板" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
