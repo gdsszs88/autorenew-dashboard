@@ -174,12 +174,13 @@ Deno.serve(async (req) => {
       const { panel_url, panel_user, panel_pass } = configData;
 
       // Login to 3x-ui
-      const cookie = await login3xui(panel_url, panel_user, panel_pass);
-      if (!cookie) {
-        return new Response(JSON.stringify({ success: false, error: "无法连接到 3x-ui 面板" }), {
+      const loginResult = await login3xui(panel_url, panel_user, panel_pass);
+      if (!loginResult.cookie) {
+        return new Response(JSON.stringify({ success: false, error: loginResult.error || "无法连接到 3x-ui 面板" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const cookie = loginResult.cookie;
 
       // Get inbounds and search for UUID
       const inboundsData = await getInbounds(panel_url, cookie);
