@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
           // Generate signature
           const sortedKeys = Object.keys(hupiParams).filter(k => hupiParams[k] !== "").sort();
           const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&");
-          const hash = hmac("md5", appSecret, signStr, "utf-8", "hex") as string;
+          const hash = await hmacMd5(appSecret, signStr);
           hupiParams.hash = hash;
 
           // Call Hupi API
