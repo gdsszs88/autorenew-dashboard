@@ -169,9 +169,22 @@ export default function ClientPortal() {
 
   const getDaysLeft = () => Math.max(0, Math.ceil((clientData.expiryDate - Date.now()) / 86400000));
 
+  const cleanupPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+  };
+
+  useEffect(() => () => cleanupPolling(), []);
+
   const initiateCheckout = (months: number, price: number, planName: string) => {
+    cleanupPolling();
     setCheckoutData({ months, price, planName });
     setSelectedMethod("");
+    setPayStatus(null);
+    setOrderId("");
+    setQrCodeUrl("");
+    setPayUrl("");
+    setCountdown(0);
     setTab("checkout");
   };
 
@@ -183,18 +196,110 @@ export default function ClientPortal() {
     }
   };
 
-  const confirmPayment = () => {
-    setPayStatus("processing");
-    setTimeout(() => {
-      setPayStatus("success");
-      if (checkoutData) {
-        const newExpiry = new Date(clientData.expiryDate);
-        newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
-        setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
-      }
-      setTab("renew");
-    }, 1500);
+  const startPolling = (oid: string, isCrypto: boolean) => {
+    setCountdown(1200); // 20 minutes
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { cleanupPolling(); setPayStatus("expired"); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+
+    pollRef.current = setInterval(async () => {
+      try {
+        if (isCrypto) {
+          const res = await verifyCryptoPayment(oid);
+          if (res?.success && (res.status === "fulfilled" || res.status === "paid_unfulfilled")) {
+            cleanupPolling();
+            setPayStatus("success");
+            if (checkoutData) {
+              const newExpiry = new Date(clientData.expiryDate);
+              newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+              setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+            }
+          }
+        } else {
+          const res = await checkOrderStatus(oid);
+          if (res?.status === "fulfilled") {
+            cleanupPolling();
+            setPayStatus("success");
+            if (checkoutData) {
+              const newExpiry = new Date(clientData.expiryDate);
+              newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+              setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+            }
+          } else if (res?.status === "paid_unfulfilled") {
+            cleanupPolling();
+            setPayStatus("paid_unfulfilled");
+          }
+        }
+      } catch {}
+    }, 5000);
   };
+
+  const confirmPayment = async () => {
+    if (!checkoutData || !selectedMethod) return;
+    setOrderCreating(true);
+    setPayStatus("creating");
+    try {
+      const isCrypto = ["usdt", "trx"].includes(selectedMethod);
+      const res = await createOrder({
+        uuid,
+        planName: checkoutData.planName,
+        months: checkoutData.months,
+        amount: checkoutData.price,
+        paymentMethod: selectedMethod,
+        ...(isCrypto ? { cryptoAmount: cryptoPrice, cryptoCurrency: selectedMethod.toUpperCase() } : {}),
+      });
+
+      if (res?.orderId) {
+        setOrderId(res.orderId);
+        if (!isCrypto && res.qrCode) {
+          setQrCodeUrl(res.qrCode);
+        }
+        if (!isCrypto && res.payUrl) {
+          setPayUrl(res.payUrl);
+        }
+        setPayStatus("waiting");
+        startPolling(res.orderId, isCrypto);
+      } else {
+        setPayStatus("error");
+        setError(res?.error || "创建订单失败");
+      }
+    } catch (err: any) {
+      setPayStatus("error");
+      setError(err?.message || "创建订单失败");
+    } finally {
+      setOrderCreating(false);
+    }
+  };
+
+  const handleCryptoVerify = async () => {
+    if (!orderId) return;
+    setPayStatus("verifying");
+    try {
+      const res = await verifyCryptoPayment(orderId);
+      if (res?.success && (res.status === "fulfilled" || res.status === "paid_unfulfilled")) {
+        cleanupPolling();
+        setPayStatus("success");
+        if (checkoutData) {
+          const newExpiry = new Date(clientData.expiryDate);
+          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+        }
+      } else {
+        setPayStatus("waiting");
+        setError(res?.message || "暂未检测到转账，请稍后再试");
+        setTimeout(() => setError(""), 3000);
+      }
+    } catch {
+      setPayStatus("waiting");
+      setError("验证失败，请稍后重试");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const formatCountdown = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   // Login screen
   if (!logged) {
