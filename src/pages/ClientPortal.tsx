@@ -200,6 +200,26 @@ export default function ClientPortal() {
             return prev - 1;
           });
         }, 1000);
+        // Start auto-polling for Hupi payments (every 5 seconds)
+        if (method === "wechat" || method === "alipay") {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          pollingRef.current = setInterval(async () => {
+            try {
+              const statusRes = await checkOrderStatus(res.orderId);
+              if (statusRes?.status === "fulfilled" || statusRes?.status === "paid" || statusRes?.status === "paid_unfulfilled") {
+                if (pollingRef.current) clearInterval(pollingRef.current);
+                if (countdownRef.current) clearInterval(countdownRef.current);
+                setPayStatus("success");
+                if (checkoutData) {
+                  const newExpiry = new Date(clientData.expiryDate);
+                  newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+                  setClientData(prev => ({ ...prev, trafficUsed: 0, expiryDate: newExpiry.getTime() }));
+                }
+                setTab("renew");
+              }
+            } catch {}
+          }, 5000);
+        }
         setPayStatus(null);
       } else {
         setPayStatus(null);
