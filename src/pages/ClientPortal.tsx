@@ -414,7 +414,7 @@ export default function ClientPortal() {
                   </button>
                 )}
                 {config.hupi_alipay && (
-                  <button onClick={() => setSelectedMethod("alipay")} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}>
+                  <button onClick={() => { setSelectedMethod("alipay"); setCurrentOrderId(null); setPayUrl(null); setError(""); }} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}>
                     <Smartphone className="w-8 h-8 mb-2 text-accent" />
                     <span className="font-bold">支付宝</span>
                   </button>
