@@ -194,6 +194,7 @@ export default function ClientPortal() {
       if (res?.success) {
         setCurrentOrderId(res.orderId);
         if (res.payUrl) setPayUrl(res.payUrl);
+        setShowPayModal(true);
         // Start 20-minute countdown
         setCountdown(20 * 60);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -221,7 +222,11 @@ export default function ClientPortal() {
                   newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
                   setClientData(prev => ({ ...prev, trafficUsed: 0, expiryDate: newExpiry.getTime() }));
                 }
-                setTab("renew");
+                // Auto close modal after 2s on success
+                setTimeout(() => {
+                  setShowPayModal(false);
+                  setTab("renew");
+                }, 2000);
               }
             } catch {}
           }, 5000);
