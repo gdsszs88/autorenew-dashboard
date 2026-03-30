@@ -41,6 +41,9 @@ export default function ClientPortal() {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
   const [qrStatus, setQrStatus] = useState("");
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [payUrl, setPayUrl] = useState<string | null>(null);
+  const [verifyingCrypto, setVerifyingCrypto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
