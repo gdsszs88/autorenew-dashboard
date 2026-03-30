@@ -144,11 +144,10 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
 }
 
 // Verify Hupi signature
-function verifyHupiSign(params: Record<string, string>, appSecret: string): boolean {
-  // Sort keys alphabetically, exclude 'hash'
+async function verifyHupiSign(params: Record<string, string>, appSecret: string): Promise<boolean> {
   const keys = Object.keys(params).filter(k => k !== "hash" && params[k] !== "").sort();
   const signStr = keys.map(k => `${k}=${params[k]}`).join("&");
-  const expectedHash = hmac("md5", appSecret, signStr, "utf-8", "hex") as string;
+  const expectedHash = await hmacMd5(appSecret, signStr);
   return expectedHash.toLowerCase() === (params.hash || "").toLowerCase();
 }
 
