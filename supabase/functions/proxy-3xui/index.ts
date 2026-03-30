@@ -36,7 +36,7 @@ async function login3xui(panelUrl: string, username: string, password: string): 
   const loginUrl = `${baseUrl}/login`;
   console.log("Attempting 3x-ui login at:", loginUrl);
   try {
-    const res = await fetch(loginUrl, {
+    const res = await fetchUnsafe(loginUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
