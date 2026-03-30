@@ -46,6 +46,7 @@ export default function ClientPortal() {
   const [verifyingCrypto, setVerifyingCrypto] = useState(false);
   const [countdown, setCountdown] = useState(0); // seconds remaining
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

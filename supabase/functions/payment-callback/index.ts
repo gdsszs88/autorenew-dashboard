@@ -342,7 +342,7 @@ Deno.serve(async (req) => {
 
       console.log("Hupi callback params:", JSON.stringify(params));
 
-      const tradeOrderNo = params.trade_order_no || ""; // Our order ID
+      const tradeOrderNo = params.trade_order_id || params.trade_order_no || ""; // Our order ID
       const status = params.status || "";
 
       if (status !== "OD") {
