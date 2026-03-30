@@ -326,7 +326,7 @@ export default function ClientPortal() {
           {tab === "renew" && config && (
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">
-                购买与续费
+                购买与续费【不按套餐续费的用户链接被锁后果自负，不予解锁】
               </h2>
               {payStatus === "success" ? (
                 <div className="bg-success/10 border border-success/20 p-8 rounded-2xl text-center">
@@ -348,12 +348,36 @@ export default function ClientPortal() {
                       <span className="text-lg">🔒</span>
                       <h3 className="text-xl font-bold text-foreground">独享套餐</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-4">带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户⚠️
+                      共享用户请勿续费独享，否则链接将被锁定
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       {[
-                        { label: "独享月付", price: config.price_exclusive_month, months: 1, days: 30, suffix: "/月", featured: false },
-                        { label: "独享季付", price: config.price_exclusive_quarter, months: 3, days: 90, suffix: "/3个月", featured: true },
-                        { label: "独享年付", price: config.price_exclusive_year, months: 12, days: 365, suffix: "/年", featured: false },
+                        {
+                          label: "独享月付",
+                          price: config.price_exclusive_month,
+                          months: 1,
+                          days: 30,
+                          suffix: "/月",
+                          featured: false,
+                        },
+                        {
+                          label: "独享季付",
+                          price: config.price_exclusive_quarter,
+                          months: 3,
+                          days: 90,
+                          suffix: "/3个月",
+                          featured: true,
+                        },
+                        {
+                          label: "独享年付",
+                          price: config.price_exclusive_year,
+                          months: 12,
+                          days: 365,
+                          suffix: "/年",
+                          featured: false,
+                        },
                       ].map((plan) => (
                         <div
                           key={plan.label}
@@ -364,15 +388,25 @@ export default function ClientPortal() {
                               推荐
                             </div>
                           )}
-                          <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>{plan.label}</h3>
+                          <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
+                            {plan.label}
+                          </h3>
                           <div className="text-4xl font-extrabold text-client-primary mb-3">
                             ¥{plan.price}
                             <span className="text-base font-normal text-muted-foreground">{plan.suffix}</span>
                           </div>
                           <ul className="text-sm text-muted-foreground space-y-2 mb-6">
-                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 独享带宽，速度有保障</li>
-                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 增加 {plan.days} 天有效期</li>
-                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 立即重置流量</li>
+                            <li className="flex items-center">
+                              <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" />{" "}
+                              独享带宽，速度有保障
+                            </li>
+                            <li className="flex items-center">
+                              <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 增加 {plan.days}{" "}
+                              天有效期
+                            </li>
+                            <li className="flex items-center">
+                              <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 立即重置流量
+                            </li>
                           </ul>
                           <button
                             onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
@@ -391,12 +425,35 @@ export default function ClientPortal() {
                       <span className="text-lg">👥</span>
                       <h3 className="text-xl font-bold text-foreground">共享套餐</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-4">多人共用线路，价格更实惠，适合日常轻度使用。⚠️ 独享用户请勿续费共享，否则链接将被锁定</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      多人共用线路，价格更实惠，适合日常轻度使用。⚠️ 独享用户请勿续费共享，否则链接将被锁定
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       {[
-                        { label: "共享月付", price: config.price_shared_month, months: 1, days: 30, suffix: "/月", featured: false },
-                        { label: "共享季付", price: config.price_shared_quarter, months: 3, days: 90, suffix: "/3个月", featured: true },
-                        { label: "共享年付", price: config.price_shared_year, months: 12, days: 365, suffix: "/年", featured: false },
+                        {
+                          label: "共享月付",
+                          price: config.price_shared_month,
+                          months: 1,
+                          days: 30,
+                          suffix: "/月",
+                          featured: false,
+                        },
+                        {
+                          label: "共享季付",
+                          price: config.price_shared_quarter,
+                          months: 3,
+                          days: 90,
+                          suffix: "/3个月",
+                          featured: true,
+                        },
+                        {
+                          label: "共享年付",
+                          price: config.price_shared_year,
+                          months: 12,
+                          days: 365,
+                          suffix: "/年",
+                          featured: false,
+                        },
                       ].map((plan) => (
                         <div
                           key={plan.label}
@@ -407,15 +464,23 @@ export default function ClientPortal() {
                               性价比
                             </div>
                           )}
-                          <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>{plan.label}</h3>
+                          <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
+                            {plan.label}
+                          </h3>
                           <div className="text-4xl font-extrabold text-success mb-3">
                             ¥{plan.price}
                             <span className="text-base font-normal text-muted-foreground">{plan.suffix}</span>
                           </div>
                           <ul className="text-sm text-muted-foreground space-y-2 mb-6">
-                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 多人共享，价格实惠</li>
-                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 增加 {plan.days} 天有效期</li>
-                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 立即重置流量</li>
+                            <li className="flex items-center">
+                              <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 多人共享，价格实惠
+                            </li>
+                            <li className="flex items-center">
+                              <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 增加 {plan.days} 天有效期
+                            </li>
+                            <li className="flex items-center">
+                              <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 立即重置流量
+                            </li>
                           </ul>
                           <button
                             onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
