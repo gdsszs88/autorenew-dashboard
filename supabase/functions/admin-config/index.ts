@@ -99,6 +99,12 @@ Deno.serve(async (req) => {
         crypto_key: config.cryptoKey,
         crypto_usdt: config.cryptoUsdt,
         crypto_trx: config.cryptoTrx,
+        price_exclusive_month: config.priceExclusiveMonth,
+        price_exclusive_quarter: config.priceExclusiveQuarter,
+        price_exclusive_year: config.priceExclusiveYear,
+        price_shared_month: config.priceSharedMonth,
+        price_shared_quarter: config.priceSharedQuarter,
+        price_shared_year: config.priceSharedYear,
       };
 
       const { error } = await supabase
