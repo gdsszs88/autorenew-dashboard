@@ -484,9 +484,58 @@ export default function ClientPortal() {
               )}
 
               {selectedMethod && currentOrderId && (
-                <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
+                <div className="bg-card border-2 border-border rounded-2xl p-8 animate-fade-in shadow-sm">
+                  {/* === Status Banner === */}
+                  <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${
+                    payStatus === "success"
+                      ? "bg-success/10 border-success/30 text-success"
+                      : payStatus === "processing"
+                      ? "bg-accent/10 border-accent/30 text-accent"
+                      : countdown === 0
+                      ? "bg-destructive/10 border-destructive/30 text-destructive"
+                      : "bg-warning/10 border-warning/30 text-warning"
+                  }`}>
+                    {payStatus === "success" ? (
+                      <>
+                        <CheckCircle2 className="w-6 h-6 shrink-0" />
+                        <div>
+                          <p className="font-bold">支付成功！</p>
+                          <p className="text-sm opacity-80">订单已完成，正在同步到后台...</p>
+                        </div>
+                      </>
+                    ) : payStatus === "processing" ? (
+                      <>
+                        <Loader2 className="w-6 h-6 shrink-0 animate-spin" />
+                        <div>
+                          <p className="font-bold">正在查询支付状态...</p>
+                          <p className="text-sm opacity-80">请稍候，系统正在确认您的付款</p>
+                        </div>
+                      </>
+                    ) : countdown === 0 ? (
+                      <>
+                        <AlertCircle className="w-6 h-6 shrink-0" />
+                        <div>
+                          <p className="font-bold">订单已过期</p>
+                          <p className="text-sm opacity-80">请返回重新创建订单</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Timer className="w-6 h-6 shrink-0 animate-pulse" />
+                        <div className="flex-1">
+                          <p className="font-bold">等待支付中</p>
+                          <p className="text-sm opacity-80">请在倒计时结束前完成付款，系统每5秒自动检测</p>
+                        </div>
+                        <div className="text-2xl font-mono font-extrabold tabular-nums">
+                          {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* === Payment Content === */}
                   {["usdt", "trx"].includes(selectedMethod) ? (
-                    <div>
+                    <div className="text-center">
                       <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
                         ⚠️ 防撞单机制：请严格按照下方显示的精确金额付款，否则系统无法自动到账！
                       </div>
@@ -496,25 +545,14 @@ export default function ClientPortal() {
                         {config.crypto_address || "（站长未设置收款地址）"}
                       </div>
                       <button onClick={handleVerifyCrypto} disabled={verifyingCrypto}
-                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
-                        {verifyingCrypto ? "正在链上查询中..." : "我已完成转账，验证到账"}
+                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center gap-2">
+                        {verifyingCrypto ? <><Loader2 className="w-4 h-4 animate-spin" />正在链上查询中...</> : "我已完成转账，验证到账"}
                       </button>
                     </div>
                   ) : (
-                    <div>
+                    <div className="text-center">
                       {payUrl ? (
                         <div>
-                          {/* Countdown */}
-                          {countdown > 0 && (
-                            <div className="mb-4 text-sm font-bold text-warning flex items-center justify-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              订单将在 {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')} 后过期
-                            </div>
-                          )}
-                          {countdown === 0 && currentOrderId && (
-                            <div className="mb-4 text-sm font-bold text-destructive">订单已过期，请重新创建</div>
-                          )}
-
                           {/* QR Code */}
                           <p className="text-muted-foreground mb-3 font-bold">电脑端请扫码支付</p>
                           <div className="w-52 h-52 mx-auto mb-4 bg-background rounded-xl border border-border p-2 flex items-center justify-center">
@@ -542,12 +580,12 @@ export default function ClientPortal() {
                         </div>
                       )}
                       <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing" || countdown === 0}
-                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center">
-                        {payStatus === "processing" ? "正在查询支付状态..." : "我已完成付款，查询状态"}
+                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center gap-2">
+                        {payStatus === "processing" ? <><Loader2 className="w-4 h-4 animate-spin" />正在查询支付状态...</> : "我已完成付款，查询状态"}
                       </button>
                     </div>
                   )}
-                  {error && <p className="text-destructive text-sm mt-4">{error}</p>}
+                  {error && <p className="text-destructive text-sm mt-4 text-center">{error}</p>}
                 </div>
               )}
             </div>
