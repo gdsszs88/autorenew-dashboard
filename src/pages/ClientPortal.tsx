@@ -4,7 +4,7 @@ import {
   ShieldCheck, ChevronRight, CheckCircle2,
   Smartphone, Bitcoin, QrCode, Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient } from "@/lib/api";
+import { getPublicConfig, lookupClient, createOrder, verifyCryptoPayment, checkOrderStatus } from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
@@ -41,6 +41,9 @@ export default function ClientPortal() {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
   const [qrStatus, setQrStatus] = useState("");
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [payUrl, setPayUrl] = useState<string | null>(null);
+  const [verifyingCrypto, setVerifyingCrypto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -148,28 +151,98 @@ export default function ClientPortal() {
   const initiateCheckout = (months: number, price: number, planName: string) => {
     setCheckoutData({ months, price, planName });
     setSelectedMethod("");
+    setCurrentOrderId(null);
+    setPayUrl(null);
+    setError("");
     setTab("checkout");
   };
 
   const handleSelectCrypto = (method: string) => {
     setSelectedMethod(method);
+    setCurrentOrderId(null);
+    setPayUrl(null);
+    setError("");
     if (checkoutData) {
       const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
       setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
     }
   };
 
-  const confirmPayment = () => {
+  const handleCreateOrder = async (method: string) => {
+    if (!checkoutData) return;
     setPayStatus("processing");
-    setTimeout(() => {
-      setPayStatus("success");
-      if (checkoutData) {
-        const newExpiry = new Date(clientData.expiryDate);
-        newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
-        setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+    try {
+      const isCrypto = method === "usdt" || method === "trx";
+      const res = await createOrder({
+        uuid,
+        planName: checkoutData.planName,
+        months: checkoutData.months,
+        amount: checkoutData.price,
+        paymentMethod: method,
+        cryptoAmount: isCrypto ? cryptoPrice : undefined,
+        cryptoCurrency: isCrypto ? method.toUpperCase() : undefined,
+      });
+      if (res?.success) {
+        setCurrentOrderId(res.orderId);
+        if (res.payUrl) setPayUrl(res.payUrl);
+        setPayStatus(null);
+      } else {
+        setPayStatus(null);
+        setError(res?.error || "创建订单失败");
       }
-      setTab("renew");
-    }, 1500);
+    } catch {
+      setPayStatus(null);
+      setError("创建订单失败，请重试");
+    }
+  };
+
+  const handleVerifyCrypto = async () => {
+    if (!currentOrderId) return;
+    setVerifyingCrypto(true);
+    try {
+      const res = await verifyCryptoPayment(currentOrderId);
+      if (res?.success && (res.status === "fulfilled" || res.status === "paid_unfulfilled")) {
+        setPayStatus("success");
+        if (res.status === "fulfilled" && checkoutData) {
+          const newExpiry = new Date(clientData.expiryDate);
+          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+        }
+        setTab("renew");
+      } else {
+        setError(res?.message || "暂未检测到转账，请稍后重试");
+      }
+    } catch {
+      setError("验证失败，请稍后重试");
+    } finally {
+      setVerifyingCrypto(false);
+    }
+  };
+
+  const handleCheckHupiOrder = async () => {
+    if (!currentOrderId) return;
+    setPayStatus("processing");
+    try {
+      const res = await checkOrderStatus(currentOrderId);
+      if (res?.status === "fulfilled") {
+        setPayStatus("success");
+        if (checkoutData) {
+          const newExpiry = new Date(clientData.expiryDate);
+          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+        }
+        setTab("renew");
+      } else if (res?.status === "paid" || res?.status === "paid_unfulfilled") {
+        setPayStatus("success");
+        setTab("renew");
+      } else {
+        setPayStatus(null);
+        setError("支付尚未完成，请完成支付后再查询");
+      }
+    } catch {
+      setPayStatus(null);
+      setError("查询失败，请稍后重试");
+    }
   };
 
   // Login screen
@@ -335,13 +408,13 @@ export default function ClientPortal() {
               <h3 className="font-bold mb-4">请选择支付方式</h3>
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {config.hupi_wechat && (
-                  <button onClick={() => setSelectedMethod("wechat")} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
+                  <button onClick={() => { setSelectedMethod("wechat"); setCurrentOrderId(null); setPayUrl(null); setError(""); }} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
                     <Smartphone className="w-8 h-8 mb-2 text-success" />
                     <span className="font-bold">微信支付</span>
                   </button>
                 )}
                 {config.hupi_alipay && (
-                  <button onClick={() => setSelectedMethod("alipay")} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}>
+                  <button onClick={() => { setSelectedMethod("alipay"); setCurrentOrderId(null); setPayUrl(null); setError(""); }} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}>
                     <Smartphone className="w-8 h-8 mb-2 text-accent" />
                     <span className="font-bold">支付宝</span>
                   </button>
@@ -360,7 +433,16 @@ export default function ClientPortal() {
                 )}
               </div>
 
-              {selectedMethod && (
+              {selectedMethod && !currentOrderId && (
+                <div className="text-center mt-4">
+                  <button onClick={() => handleCreateOrder(selectedMethod)} disabled={payStatus === "processing"}
+                    className="bg-client-primary text-client-primary-foreground font-bold py-3 px-8 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                    {payStatus === "processing" ? "正在创建订单..." : "确认支付方式，创建订单"}
+                  </button>
+                </div>
+              )}
+
+              {selectedMethod && currentOrderId && (
                 <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
                   {["usdt", "trx"].includes(selectedMethod) ? (
                     <div>
@@ -372,20 +454,37 @@ export default function ClientPortal() {
                       <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
                         {config.crypto_address || "（站长未设置收款地址）"}
                       </div>
+                      <button onClick={handleVerifyCrypto} disabled={verifyingCrypto}
+                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
+                        {verifyingCrypto ? "正在链上查询中..." : "我已完成转账，验证到账"}
+                      </button>
                     </div>
                   ) : (
                     <div>
-                      <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
-                        <QrCode className="w-12 h-12 text-muted-foreground" />
-                        <span className="absolute text-muted-foreground font-bold">扫码支付</span>
-                      </div>
-                      <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}</p>
+                      {payUrl ? (
+                        <div>
+                          <p className="text-muted-foreground mb-4 font-bold">请点击下方链接或扫码完成付款</p>
+                          <a href={payUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-block bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-md mb-6">
+                            前往支付页面
+                          </a>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
+                            <QrCode className="w-12 h-12 text-muted-foreground" />
+                            <span className="absolute text-muted-foreground font-bold">扫码支付</span>
+                          </div>
+                          <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}</p>
+                        </div>
+                      )}
+                      <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing"}
+                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
+                        {payStatus === "processing" ? "正在查询支付状态..." : "我已完成付款，查询状态"}
+                      </button>
                     </div>
                   )}
-                  <button onClick={confirmPayment} disabled={payStatus === "processing"}
-                    className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
-                    {payStatus === "processing" ? "正在验证订单..." : "我已完成付款"}
-                  </button>
+                  {error && <p className="text-destructive text-sm mt-4">{error}</p>}
                 </div>
               )}
             </div>

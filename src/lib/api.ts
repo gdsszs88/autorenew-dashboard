@@ -41,3 +41,36 @@ export async function getPublicConfig() {
 export async function lookupClient(uuid: string) {
   return callEdgeFunction("proxy-3xui", { action: "lookup", uuid });
 }
+
+// Payment APIs
+export async function createOrder(params: {
+  uuid: string;
+  planName: string;
+  months: number;
+  amount: number;
+  paymentMethod: string;
+  cryptoAmount?: number;
+  cryptoCurrency?: string;
+}) {
+  return callEdgeFunction("payment-callback", { action: "create-order", ...params });
+}
+
+export async function checkOrderStatus(orderId: string) {
+  return callEdgeFunction("payment-callback", { action: "check-order", orderId });
+}
+
+export async function verifyCryptoPayment(orderId: string) {
+  return callEdgeFunction("crypto-verify", { action: "verify", orderId });
+}
+
+// Get orders for a UUID
+export async function getOrders(uuid: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("uuid", uuid)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return data;
+}
