@@ -453,6 +453,7 @@ export default function ClientPortal() {
                     className="bg-client-primary text-client-primary-foreground font-bold py-3 px-8 rounded-xl hover:opacity-90 transition-colors shadow-md">
                     {payStatus === "processing" ? "正在创建订单..." : "确认支付方式，创建订单"}
                   </button>
+                  {error && <p className="text-destructive text-sm mt-3">{error}</p>}
                 </div>
               )}
 
