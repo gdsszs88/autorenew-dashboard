@@ -68,6 +68,12 @@ Deno.serve(async (req) => {
         cryptoKey: data.crypto_key || "",
         cryptoUsdt: data.crypto_usdt,
         cryptoTrx: data.crypto_trx,
+        priceExclusiveMonth: data.price_exclusive_month,
+        priceExclusiveQuarter: data.price_exclusive_quarter,
+        priceExclusiveYear: data.price_exclusive_year,
+        priceSharedMonth: data.price_shared_month,
+        priceSharedQuarter: data.price_shared_quarter,
+        priceSharedYear: data.price_shared_year,
       };
 
       return new Response(JSON.stringify({ config: frontendConfig }), {
@@ -93,6 +99,12 @@ Deno.serve(async (req) => {
         crypto_key: config.cryptoKey,
         crypto_usdt: config.cryptoUsdt,
         crypto_trx: config.cryptoTrx,
+        price_exclusive_month: config.priceExclusiveMonth,
+        price_exclusive_quarter: config.priceExclusiveQuarter,
+        price_exclusive_year: config.priceExclusiveYear,
+        price_shared_month: config.priceSharedMonth,
+        price_shared_quarter: config.priceSharedQuarter,
+        price_shared_year: config.priceSharedYear,
       };
 
       const { error } = await supabase

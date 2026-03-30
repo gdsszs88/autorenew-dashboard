@@ -10,6 +10,12 @@ interface AdminConfigData {
   priceMonth: number;
   priceQuarter: number;
   priceYear: number;
+  priceExclusiveMonth: number;
+  priceExclusiveQuarter: number;
+  priceExclusiveYear: number;
+  priceSharedMonth: number;
+  priceSharedQuarter: number;
+  priceSharedYear: number;
   hupiWechatAppId: string;
   hupiWechatAppSecret: string;
   hupiAlipayAppId: string;
@@ -29,6 +35,12 @@ const defaultConfig: AdminConfigData = {
   priceMonth: 15,
   priceQuarter: 40,
   priceYear: 150,
+  priceExclusiveMonth: 25,
+  priceExclusiveQuarter: 65,
+  priceExclusiveYear: 240,
+  priceSharedMonth: 15,
+  priceSharedQuarter: 40,
+  priceSharedYear: 150,
   hupiWechatAppId: "",
   hupiWechatAppSecret: "",
   hupiAlipayAppId: "",
@@ -157,21 +169,47 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-bold mb-6 flex items-center text-success border-b border-border pb-3">
               <DollarSign className="w-5 h-5 mr-2" /> 套餐价格设置 (人民币)
             </h2>
-            <div className="space-y-5">
-              {[
-                { label: "月付 (30天)", key: "priceMonth" as const },
-                { label: "季付 (90天)", key: "priceQuarter" as const },
-                { label: "年付 (365天)", key: "priceYear" as const },
-              ].map(item => (
-                <div key={item.key} className="flex items-center space-x-4 bg-muted p-3 rounded-lg border border-border">
-                  <label className="w-24 text-sm font-bold">{item.label}</label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-2.5 text-muted-foreground">¥</span>
-                    <input type="number" value={config[item.key]} onChange={e => setConfig({ ...config, [item.key]: Number(e.target.value) })}
-                      className="w-full border border-input p-2.5 pl-8 rounded-lg focus:ring-2 focus:ring-success outline-none bg-background" />
-                  </div>
+            <div className="space-y-6">
+              {/* 独享分组 */}
+              <div>
+                <h3 className="text-sm font-bold text-foreground mb-3 bg-client-primary/10 text-client-primary px-3 py-1.5 rounded-lg inline-block">🔒 独享分组</h3>
+                <div className="space-y-3">
+                  {[
+                    { label: "独享月付 (30天)", key: "priceExclusiveMonth" as const },
+                    { label: "独享季付 (90天)", key: "priceExclusiveQuarter" as const },
+                    { label: "独享年付 (365天)", key: "priceExclusiveYear" as const },
+                  ].map(item => (
+                    <div key={item.key} className="flex items-center space-x-4 bg-muted p-3 rounded-lg border border-border">
+                      <label className="w-32 text-sm font-bold">{item.label}</label>
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-2.5 text-muted-foreground">¥</span>
+                        <input type="number" value={config[item.key]} onChange={e => setConfig({ ...config, [item.key]: Number(e.target.value) })}
+                          className="w-full border border-input p-2.5 pl-8 rounded-lg focus:ring-2 focus:ring-success outline-none bg-background" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              {/* 共享分组 */}
+              <div>
+                <h3 className="text-sm font-bold text-foreground mb-3 bg-success/10 text-success px-3 py-1.5 rounded-lg inline-block">👥 共享分组</h3>
+                <div className="space-y-3">
+                  {[
+                    { label: "共享月付 (30天)", key: "priceSharedMonth" as const },
+                    { label: "共享季付 (90天)", key: "priceSharedQuarter" as const },
+                    { label: "共享年付 (365天)", key: "priceSharedYear" as const },
+                  ].map(item => (
+                    <div key={item.key} className="flex items-center space-x-4 bg-muted p-3 rounded-lg border border-border">
+                      <label className="w-32 text-sm font-bold">{item.label}</label>
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-2.5 text-muted-foreground">¥</span>
+                        <input type="number" value={config[item.key]} onChange={e => setConfig({ ...config, [item.key]: Number(e.target.value) })}
+                          className="w-full border border-input p-2.5 pl-8 rounded-lg focus:ring-2 focus:ring-success outline-none bg-background" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <button onClick={handleSave} className="w-full bg-success text-success-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
                 <CheckCircle2 className="w-5 h-5 mr-2" /> 同步至客户前台
               </button>

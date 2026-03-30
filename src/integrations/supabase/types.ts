@@ -32,8 +32,14 @@ export type Database = {
           panel_pass: string
           panel_url: string
           panel_user: string
+          price_exclusive_month: number
+          price_exclusive_quarter: number
+          price_exclusive_year: number
           price_month: number
           price_quarter: number
+          price_shared_month: number
+          price_shared_quarter: number
+          price_shared_year: number
           price_year: number
           updated_at: string
         }
@@ -54,8 +60,14 @@ export type Database = {
           panel_pass?: string
           panel_url?: string
           panel_user?: string
+          price_exclusive_month?: number
+          price_exclusive_quarter?: number
+          price_exclusive_year?: number
           price_month?: number
           price_quarter?: number
+          price_shared_month?: number
+          price_shared_quarter?: number
+          price_shared_year?: number
           price_year?: number
           updated_at?: string
         }
@@ -76,8 +88,14 @@ export type Database = {
           panel_pass?: string
           panel_url?: string
           panel_user?: string
+          price_exclusive_month?: number
+          price_exclusive_quarter?: number
+          price_exclusive_year?: number
           price_month?: number
           price_quarter?: number
+          price_shared_month?: number
+          price_shared_quarter?: number
+          price_shared_year?: number
           price_year?: number
           updated_at?: string
         }
