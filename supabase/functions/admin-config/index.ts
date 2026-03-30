@@ -68,6 +68,12 @@ Deno.serve(async (req) => {
         cryptoKey: data.crypto_key || "",
         cryptoUsdt: data.crypto_usdt,
         cryptoTrx: data.crypto_trx,
+        priceExclusiveMonth: data.price_exclusive_month,
+        priceExclusiveQuarter: data.price_exclusive_quarter,
+        priceExclusiveYear: data.price_exclusive_year,
+        priceSharedMonth: data.price_shared_month,
+        priceSharedQuarter: data.price_shared_quarter,
+        priceSharedYear: data.price_shared_year,
       };
 
       return new Response(JSON.stringify({ config: frontendConfig }), {
