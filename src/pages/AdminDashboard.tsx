@@ -81,12 +81,12 @@ export default function AdminDashboard() {
   const handleTest = async () => {
     setSaveStatus("正在测试连接...");
     try {
-      const res = await testPanelConnection(token);
+      const res = await testPanelConnection(token, config.panelUrl, config.panelUser, config.panelPass);
       setSaveStatus(res?.success ? "连接 3x-ui 面板成功！" : `连接失败: ${res?.error || "未知错误"}`);
     } catch {
       setSaveStatus("连接测试失败");
     }
-    setTimeout(() => setSaveStatus(""), 3000);
+    setTimeout(() => setSaveStatus(""), 5000);
   };
 
   const logout = () => {
