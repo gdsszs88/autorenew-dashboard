@@ -469,9 +469,8 @@ Deno.serve(async (req) => {
 
           // Generate signature
           const sortedKeys = Object.keys(hupiParams).filter(k => hupiParams[k] !== "").sort();
-          const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&");
-          const hash = await hmacMd5(appSecret, signStr);
-          hupiParams.hash = hash;
+          const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&") + appSecret;
+          hupiParams.hash = md5Hex(signStr);
 
           // Call Hupi API
           const hupiUrl = paymentMethod === "wechat"
