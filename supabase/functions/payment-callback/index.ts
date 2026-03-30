@@ -1,13 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
+import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 
-// MD5 HMAC using Web Crypto API
+// MD5 HMAC using Deno std library (supports MD5 unlike Web Crypto)
 async function hmacMd5(key: string, message: string): Promise<string> {
   const encoder = new TextEncoder();
   const cryptoKey = await crypto.subtle.importKey(
     "raw", encoder.encode(key), { name: "HMAC", hash: "MD5" }, false, ["sign"]
   );
   const sig = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(message));
-  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return encodeHex(new Uint8Array(sig));
 }
 
 const corsHeaders = {
