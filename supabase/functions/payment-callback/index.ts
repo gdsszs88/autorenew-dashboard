@@ -173,8 +173,8 @@ function toRawString(input: string) {
   return Array.from(new TextEncoder().encode(input), (byte) => String.fromCharCode(byte)).join("");
 }
 
-async function hmacMd5(key: string, message: string): Promise<string> {
-  return rstr2hex(rstrHmacMd5(toRawString(key), toRawString(message)));
+function md5Hex(input: string): string {
+  return rstr2hex(rstrMd5(toRawString(input)));
 }
 
 const corsHeaders = {
