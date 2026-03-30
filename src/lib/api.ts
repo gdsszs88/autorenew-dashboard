@@ -19,7 +19,7 @@ export async function getAdminConfig(token: string) {
   return callEdgeFunction("admin-config", { action: "get", token });
 }
 
-export async function saveAdminConfig(token: string, config: Record<string, unknown>) {
+export async function saveAdminConfig(token: string, config: object) {
   return callEdgeFunction("admin-config", { action: "save", token, config });
 }
 
