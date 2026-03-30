@@ -58,6 +58,10 @@ export default function ClientPortal() {
       s.async = true;
       document.body.appendChild(s);
     }
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
   }, []);
 
   const extractUuid = (input: string) => {
