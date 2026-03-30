@@ -147,6 +147,17 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Get config from DB for lookup
+      const { data: configData, error: configError } = await supabase.from("admin_config").select("*").limit(1).single();
+      if (configError || !configData) {
+        return new Response(JSON.stringify({ error: "系统配置未初始化" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { panel_url, panel_user, panel_pass } = configData;
+
       // Login to 3x-ui
       const cookie = await login3xui(panel_url, panel_user, panel_pass);
       if (!cookie) {
