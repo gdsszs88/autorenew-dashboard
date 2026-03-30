@@ -187,6 +187,18 @@ export default function ClientPortal() {
       if (res?.success) {
         setCurrentOrderId(res.orderId);
         if (res.payUrl) setPayUrl(res.payUrl);
+        // Start 20-minute countdown
+        setCountdown(20 * 60);
+        if (countdownRef.current) clearInterval(countdownRef.current);
+        countdownRef.current = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              if (countdownRef.current) clearInterval(countdownRef.current);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
         setPayStatus(null);
       } else {
         setPayStatus(null);
