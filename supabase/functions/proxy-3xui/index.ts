@@ -1,13 +1,21 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Skip SSL certificate verification for self-signed certs (common with 3x-ui)
-// deno-lint-ignore no-explicit-any
-(globalThis as any).process = (globalThis as any).process || {};
-(globalThis as any).process.env = (globalThis as any).process.env || {};
-(globalThis as any).process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-function fetchUnsafe(url: string, init?: RequestInit): Promise<Response> {
-  return fetch(url, init);
+// Helper: fetch with automatic HTTP fallback when HTTPS has cert issues
+async function fetchUnsafe(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    const errStr = String(err);
+    // If SSL cert error, retry with HTTP
+    if (errStr.includes("certificate") || errStr.includes("SSL") || errStr.includes("TLS")) {
+      const httpUrl = url.replace(/^https:\/\//, "http://");
+      if (httpUrl !== url) {
+        console.log("SSL cert error, retrying with HTTP:", httpUrl);
+        return await fetch(httpUrl, init);
+      }
+    }
+    throw err;
+  }
 }
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
