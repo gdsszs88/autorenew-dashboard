@@ -326,7 +326,7 @@ export default function ClientPortal() {
           {tab === "renew" && config && (
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">
-                购买与续费，独享的用户续费共享，导致链接被锁后果自负
+                购买与续费
               </h2>
               {payStatus === "success" ? (
                 <div className="bg-success/10 border border-success/20 p-8 rounded-2xl text-center">
@@ -341,65 +341,92 @@ export default function ClientPortal() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                  {[
-                    {
-                      label: "月付套餐",
-                      price: config.price_month,
-                      months: 1,
-                      days: 30,
-                      suffix: "/月",
-                      featured: false,
-                    },
-                    {
-                      label: "季付套餐",
-                      price: config.price_quarter,
-                      months: 3,
-                      days: 90,
-                      suffix: "/3个月",
-                      featured: true,
-                    },
-                    {
-                      label: "年付套餐",
-                      price: config.price_year,
-                      months: 12,
-                      days: 365,
-                      suffix: "/年",
-                      featured: false,
-                    },
-                  ].map((plan) => (
-                    <div
-                      key={plan.label}
-                      className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-client-primary"}`}
-                    >
-                      {plan.featured && (
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
-                          推荐选择
-                        </div>
-                      )}
-                      <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
-                        {plan.label}
-                      </h3>
-                      <div className="text-4xl font-extrabold text-client-primary mb-4">
-                        ¥{plan.price}
-                        <span className="text-base font-normal text-muted-foreground">{plan.suffix}</span>
-                      </div>
-                      <ul className="text-sm text-muted-foreground space-y-3 mb-8">
-                        <li className="flex items-center">
-                          <ChevronRight className="w-4 h-4 text-client-primary mr-1" /> 增加 {plan.days} 天有效期
-                        </li>
-                        <li className="flex items-center">
-                          <ChevronRight className="w-4 h-4 text-client-primary mr-1" /> 立即重置流量
-                        </li>
-                      </ul>
-                      <button
-                        onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
-                        className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}
-                      >
-                        立即购买
-                      </button>
+                <div className="space-y-10">
+                  {/* 独享分组 */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">🔒</span>
+                      <h3 className="text-xl font-bold text-foreground">独享套餐</h3>
                     </div>
-                  ))}
+                    <p className="text-sm text-muted-foreground mb-4">带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      {[
+                        { label: "独享月付", price: config.price_exclusive_month, months: 1, days: 30, suffix: "/月", featured: false },
+                        { label: "独享季付", price: config.price_exclusive_quarter, months: 3, days: 90, suffix: "/3个月", featured: true },
+                        { label: "独享年付", price: config.price_exclusive_year, months: 12, days: 365, suffix: "/年", featured: false },
+                      ].map((plan) => (
+                        <div
+                          key={plan.label}
+                          className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-client-primary bg-card"}`}
+                        >
+                          {plan.featured && (
+                            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                              推荐
+                            </div>
+                          )}
+                          <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>{plan.label}</h3>
+                          <div className="text-4xl font-extrabold text-client-primary mb-3">
+                            ¥{plan.price}
+                            <span className="text-base font-normal text-muted-foreground">{plan.suffix}</span>
+                          </div>
+                          <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 独享带宽，速度有保障</li>
+                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 增加 {plan.days} 天有效期</li>
+                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 立即重置流量</li>
+                          </ul>
+                          <button
+                            onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
+                            className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}
+                          >
+                            立即购买
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 共享分组 */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">👥</span>
+                      <h3 className="text-xl font-bold text-foreground">共享套餐</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">多人共用线路，价格更实惠，适合日常轻度使用。⚠️ 独享用户请勿续费共享，否则链接将被锁定</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      {[
+                        { label: "共享月付", price: config.price_shared_month, months: 1, days: 30, suffix: "/月", featured: false },
+                        { label: "共享季付", price: config.price_shared_quarter, months: 3, days: 90, suffix: "/3个月", featured: true },
+                        { label: "共享年付", price: config.price_shared_year, months: 12, days: 365, suffix: "/年", featured: false },
+                      ].map((plan) => (
+                        <div
+                          key={plan.label}
+                          className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-success shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-success bg-card"}`}
+                        >
+                          {plan.featured && (
+                            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-success text-success-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                              性价比
+                            </div>
+                          )}
+                          <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>{plan.label}</h3>
+                          <div className="text-4xl font-extrabold text-success mb-3">
+                            ¥{plan.price}
+                            <span className="text-base font-normal text-muted-foreground">{plan.suffix}</span>
+                          </div>
+                          <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 多人共享，价格实惠</li>
+                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 增加 {plan.days} 天有效期</li>
+                            <li className="flex items-center"><ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 立即重置流量</li>
+                          </ul>
+                          <button
+                            onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
+                            className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-success text-success-foreground hover:opacity-90 shadow-md" : "bg-success/10 text-success hover:bg-success hover:text-success-foreground"}`}
+                          >
+                            立即购买
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
