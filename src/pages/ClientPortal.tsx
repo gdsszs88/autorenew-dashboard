@@ -10,6 +10,12 @@ interface PublicConfig {
   price_month: number;
   price_quarter: number;
   price_year: number;
+  price_exclusive_month: number;
+  price_exclusive_quarter: number;
+  price_exclusive_year: number;
+  price_shared_month: number;
+  price_shared_quarter: number;
+  price_shared_year: number;
   hupi_wechat: boolean;
   hupi_alipay: boolean;
   crypto_usdt: boolean;
