@@ -1,5 +1,22 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Helper: fetch with automatic HTTP fallback when HTTPS has cert issues
+async function fetchUnsafe(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    const errStr = String(err);
+    // If SSL cert error, retry with HTTP
+    if (errStr.includes("certificate") || errStr.includes("SSL") || errStr.includes("TLS")) {
+      const httpUrl = url.replace(/^https:\/\//, "http://");
+      if (httpUrl !== url) {
+        console.log("SSL cert error, retrying with HTTP:", httpUrl);
+        return await fetch(httpUrl, init);
+      }
+    }
+    throw err;
+  }
+}
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -16,41 +33,60 @@ function verifyToken(token: string): string | null {
 }
 
 // Helper: Login to 3x-ui panel and get session cookie
-async function login3xui(panelUrl: string, username: string, password: string): Promise<string | null> {
+async function login3xui(panelUrl: string, username: string, password: string): Promise<{ cookie: string | null; error?: string }> {
+  const baseUrl = panelUrl.replace(/\/+$/, "");
+  const loginUrl = `${baseUrl}/login`;
+  console.log("Attempting 3x-ui login at:", loginUrl);
   try {
-    const res = await fetch(`${panelUrl}/login`, {
+    const res = await fetchUnsafe(loginUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-      redirect: "manual",
     });
+
+    console.log("3x-ui login response status:", res.status);
+    const resBody = await res.text();
+    console.log("3x-ui login response body:", resBody.substring(0, 500));
 
     // Extract Set-Cookie header
     const setCookie = res.headers.get("set-cookie");
+    console.log("3x-ui set-cookie:", setCookie);
+
+    let cookie: string | null = null;
     if (setCookie) {
-      // Extract session cookie (3x-ui-session or session)
       const match = setCookie.match(/([^=]+=[^;]+)/);
-      return match ? match[1] : null;
+      cookie = match ? match[1] : null;
     }
 
-    // Some versions return JSON with success flag
-    if (res.ok) {
-      const body = await res.json();
-      if (body.success) {
-        const cookies = res.headers.get("set-cookie");
-        return cookies?.match(/([^=]+=[^;]+)/)?.[1] || null;
+    // Parse response body
+    try {
+      const json = JSON.parse(resBody);
+      if (json.success === false) {
+        return { cookie: null, error: json.msg || "登录失败：账号或密码错误" };
       }
+      if (json.success === true && cookie) {
+        return { cookie };
+      }
+      // If success but no cookie, try to find it in response headers
+      if (json.success === true) {
+        return { cookie: null, error: "登录成功但未获取到 Session Cookie" };
+      }
+    } catch {
+      // Not JSON response
     }
-    return null;
+
+    if (cookie) return { cookie };
+    return { cookie: null, error: `面板返回状态码 ${res.status}，未获取到登录凭证` };
   } catch (err) {
     console.error("3x-ui login failed:", err);
-    return null;
+    return { cookie: null, error: `无法连接到面板: ${String(err).substring(0, 200)}` };
   }
 }
 
 // Helper: Get all inbounds from 3x-ui
 async function getInbounds(panelUrl: string, cookie: string) {
-  const res = await fetch(`${panelUrl}/panel/api/inbounds/list`, {
+  const baseUrl = panelUrl.replace(/\/+$/, "");
+  const res = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/list`, {
     method: "GET",
     headers: { Cookie: cookie, Accept: "application/json" },
   });
@@ -102,19 +138,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get admin config
-    let configQuery = supabase.from("admin_config").select("*").limit(1).single();
-    const { data: configData, error: configError } = await configQuery;
-
-    if (configError || !configData) {
-      return new Response(JSON.stringify({ error: "系统配置未初始化" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { panel_url, panel_user, panel_pass } = configData;
-
     if (action === "test") {
       // Verify admin token
       const configId = verifyToken(token);
@@ -125,13 +148,24 @@ Deno.serve(async (req) => {
         });
       }
 
-      const cookie = await login3xui(panel_url, panel_user, panel_pass);
-      if (cookie) {
+      // Use panel params from request body (form values), not DB
+      const testUrl = body.panelUrl || "";
+      const testUser = body.panelUser || "";
+      const testPass = body.panelPass || "";
+
+      if (!testUrl) {
+        return new Response(JSON.stringify({ success: false, error: "请输入面板 URL" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const result = await login3xui(testUrl, testUser, testPass);
+      if (result.cookie) {
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        return new Response(JSON.stringify({ success: false, error: "无法连接到面板，请检查地址和账号密码" }), {
+        return new Response(JSON.stringify({ success: false, error: result.error || "无法连接到面板" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -145,13 +179,25 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Login to 3x-ui
-      const cookie = await login3xui(panel_url, panel_user, panel_pass);
-      if (!cookie) {
-        return new Response(JSON.stringify({ success: false, error: "无法连接到 3x-ui 面板" }), {
+      // Get config from DB for lookup
+      const { data: configData, error: configError } = await supabase.from("admin_config").select("*").limit(1).single();
+      if (configError || !configData) {
+        return new Response(JSON.stringify({ error: "系统配置未初始化" }), {
+          status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      const { panel_url, panel_user, panel_pass } = configData;
+
+      // Login to 3x-ui
+      const loginResult = await login3xui(panel_url, panel_user, panel_pass);
+      if (!loginResult.cookie) {
+        return new Response(JSON.stringify({ success: false, error: loginResult.error || "无法连接到 3x-ui 面板" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const cookie = loginResult.cookie;
 
       // Get inbounds and search for UUID
       const inboundsData = await getInbounds(panel_url, cookie);

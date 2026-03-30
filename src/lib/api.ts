@@ -23,8 +23,8 @@ export async function saveAdminConfig(token: string, config: object) {
   return callEdgeFunction("admin-config", { action: "save", token, config });
 }
 
-export async function testPanelConnection(token: string) {
-  return callEdgeFunction("proxy-3xui", { action: "test", token });
+export async function testPanelConnection(token: string, panelUrl: string, panelUser: string, panelPass: string) {
+  return callEdgeFunction("proxy-3xui", { action: "test", token, panelUrl, panelUser, panelPass });
 }
 
 // Client APIs
