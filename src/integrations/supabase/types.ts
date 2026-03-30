@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_config: {
+        Row: {
+          admin_password_hash: string
+          created_at: string
+          crypto_address: string | null
+          crypto_key: string | null
+          crypto_trx: boolean
+          crypto_usdt: boolean
+          hupi_alipay: boolean
+          hupi_alipay_app_id: string | null
+          hupi_alipay_app_secret: string | null
+          hupi_wechat: boolean
+          hupi_wechat_app_id: string | null
+          hupi_wechat_app_secret: string | null
+          id: string
+          panel_pass: string
+          panel_url: string
+          panel_user: string
+          price_month: number
+          price_quarter: number
+          price_year: number
+          updated_at: string
+        }
+        Insert: {
+          admin_password_hash?: string
+          created_at?: string
+          crypto_address?: string | null
+          crypto_key?: string | null
+          crypto_trx?: boolean
+          crypto_usdt?: boolean
+          hupi_alipay?: boolean
+          hupi_alipay_app_id?: string | null
+          hupi_alipay_app_secret?: string | null
+          hupi_wechat?: boolean
+          hupi_wechat_app_id?: string | null
+          hupi_wechat_app_secret?: string | null
+          id?: string
+          panel_pass?: string
+          panel_url?: string
+          panel_user?: string
+          price_month?: number
+          price_quarter?: number
+          price_year?: number
+          updated_at?: string
+        }
+        Update: {
+          admin_password_hash?: string
+          created_at?: string
+          crypto_address?: string | null
+          crypto_key?: string | null
+          crypto_trx?: boolean
+          crypto_usdt?: boolean
+          hupi_alipay?: boolean
+          hupi_alipay_app_id?: string | null
+          hupi_alipay_app_secret?: string | null
+          hupi_wechat?: boolean
+          hupi_wechat_app_id?: string | null
+          hupi_wechat_app_secret?: string | null
+          id?: string
+          panel_pass?: string
+          panel_url?: string
+          panel_user?: string
+          price_month?: number
+          price_quarter?: number
+          price_year?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
