@@ -4,7 +4,7 @@ import {
   ShieldCheck, ChevronRight, CheckCircle2,
   Smartphone, Bitcoin, QrCode, Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient } from "@/lib/api";
+import { getPublicConfig, lookupClient, createOrder, verifyCryptoPayment, checkOrderStatus } from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
