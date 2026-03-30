@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
         ? config.hupi_wechat_app_secret
         : config.hupi_alipay_app_secret;
 
-      if (appSecret && !verifyHupiSign(params, appSecret)) {
+      if (appSecret && !(await verifyHupiSign(params, appSecret))) {
         console.error("Invalid Hupi signature");
         return new Response("fail", { headers: corsHeaders });
       }
