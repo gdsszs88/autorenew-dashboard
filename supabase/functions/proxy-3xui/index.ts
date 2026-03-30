@@ -54,7 +54,8 @@ async function login3xui(panelUrl: string, username: string, password: string): 
 
 // Helper: Get all inbounds from 3x-ui
 async function getInbounds(panelUrl: string, cookie: string) {
-  const res = await fetch(`${panelUrl}/panel/api/inbounds/list`, {
+  const baseUrl = panelUrl.replace(/\/+$/, "");
+  const res = await fetch(`${baseUrl}/panel/api/inbounds/list`, {
     method: "GET",
     headers: { Cookie: cookie, Accept: "application/json" },
   });
