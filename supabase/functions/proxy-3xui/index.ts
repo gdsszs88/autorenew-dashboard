@@ -17,8 +17,12 @@ function verifyToken(token: string): string | null {
 
 // Helper: Login to 3x-ui panel and get session cookie
 async function login3xui(panelUrl: string, username: string, password: string): Promise<string | null> {
+  // Normalize URL: remove trailing slash, append /login
+  const baseUrl = panelUrl.replace(/\/+$/, "");
+  const loginUrl = `${baseUrl}/login`;
+  console.log("Attempting 3x-ui login at:", loginUrl);
   try {
-    const res = await fetch(`${panelUrl}/login`, {
+    const res = await fetch(loginUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
