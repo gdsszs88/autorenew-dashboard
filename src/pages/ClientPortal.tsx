@@ -44,7 +44,8 @@ export default function ClientPortal() {
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [payUrl, setPayUrl] = useState<string | null>(null);
   const [verifyingCrypto, setVerifyingCrypto] = useState(false);
-  const [countdown, setCountdown] = useState(0); // seconds remaining
+  const [countdown, setCountdown] = useState(0);
+  const [showPayModal, setShowPayModal] = useState(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -193,6 +194,7 @@ export default function ClientPortal() {
       if (res?.success) {
         setCurrentOrderId(res.orderId);
         if (res.payUrl) setPayUrl(res.payUrl);
+        setShowPayModal(true);
         // Start 20-minute countdown
         setCountdown(20 * 60);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -220,7 +222,11 @@ export default function ClientPortal() {
                   newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
                   setClientData(prev => ({ ...prev, trafficUsed: 0, expiryDate: newExpiry.getTime() }));
                 }
-                setTab("renew");
+                // Auto close modal after 2s on success
+                setTimeout(() => {
+                  setShowPayModal(false);
+                  setTab("renew");
+                }, 2000);
               }
             } catch {}
           }, 5000);
@@ -248,7 +254,7 @@ export default function ClientPortal() {
           newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
           setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
         }
-        setTab("renew");
+        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
       } else {
         setError(res?.message || "暂未检测到转账，请稍后重试");
       }
@@ -271,10 +277,10 @@ export default function ClientPortal() {
           newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
           setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
         }
-        setTab("renew");
+        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
       } else if (res?.status === "paid" || res?.status === "paid_unfulfilled") {
         setPayStatus("success");
-        setTab("renew");
+        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
       } else {
         setPayStatus(null);
         setError("支付尚未完成，请完成支付后再查询");
@@ -483,109 +489,145 @@ export default function ClientPortal() {
                 </div>
               )}
 
-              {selectedMethod && currentOrderId && (
-                <div className="bg-card border-2 border-border rounded-2xl p-8 animate-fade-in shadow-sm">
-                  {/* === Status Banner === */}
-                  <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${
-                    payStatus === "success"
-                      ? "bg-success/10 border-success/30 text-success"
-                      : payStatus === "processing"
-                      ? "bg-accent/10 border-accent/30 text-accent"
-                      : countdown === 0
-                      ? "bg-destructive/10 border-destructive/30 text-destructive"
-                      : "bg-warning/10 border-warning/30 text-warning"
-                  }`}>
-                    {payStatus === "success" ? (
-                      <>
-                        <CheckCircle2 className="w-6 h-6 shrink-0" />
-                        <div>
-                          <p className="font-bold">支付成功！</p>
-                          <p className="text-sm opacity-80">订单已完成，正在同步到后台...</p>
-                        </div>
-                      </>
-                    ) : payStatus === "processing" ? (
-                      <>
-                        <Loader2 className="w-6 h-6 shrink-0 animate-spin" />
-                        <div>
-                          <p className="font-bold">正在查询支付状态...</p>
-                          <p className="text-sm opacity-80">请稍候，系统正在确认您的付款</p>
-                        </div>
-                      </>
-                    ) : countdown === 0 ? (
-                      <>
-                        <AlertCircle className="w-6 h-6 shrink-0" />
-                        <div>
-                          <p className="font-bold">订单已过期</p>
-                          <p className="text-sm opacity-80">请返回重新创建订单</p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <Timer className="w-6 h-6 shrink-0 animate-pulse" />
-                        <div className="flex-1">
-                          <p className="font-bold">等待支付中</p>
-                          <p className="text-sm opacity-80">请在倒计时结束前完成付款，系统每5秒自动检测</p>
-                        </div>
-                        <div className="text-2xl font-mono font-extrabold tabular-nums">
-                          {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}
-                        </div>
-                      </>
-                    )}
-                  </div>
+              {/* Payment Modal */}
+              {showPayModal && currentOrderId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  {/* Backdrop */}
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => {
+                    if (payStatus !== "processing") {
+                      if (pollingRef.current) clearInterval(pollingRef.current);
+                      if (countdownRef.current) clearInterval(countdownRef.current);
+                      setShowPayModal(false);
+                      setCurrentOrderId(null);
+                      setPayUrl(null);
+                      setCountdown(0);
+                      setPayStatus(null);
+                      setError("");
+                    }
+                  }} />
+                  {/* Modal */}
+                  <div className="relative bg-card rounded-2xl shadow-2xl border border-border w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-fade-in">
+                    {/* Close button */}
+                    <button onClick={() => {
+                      if (pollingRef.current) clearInterval(pollingRef.current);
+                      if (countdownRef.current) clearInterval(countdownRef.current);
+                      setShowPayModal(false);
+                      setCurrentOrderId(null);
+                      setPayUrl(null);
+                      setCountdown(0);
+                      setPayStatus(null);
+                      setError("");
+                    }} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-10 text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
+                      ✕
+                    </button>
 
-                  {/* === Payment Content === */}
-                  {["usdt", "trx"].includes(selectedMethod) ? (
-                    <div className="text-center">
-                      <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
-                        ⚠️ 防撞单机制：请严格按照下方显示的精确金额付款，否则系统无法自动到账！
-                      </div>
-                      <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
-                      <div className="text-4xl font-extrabold text-client-primary mb-6">{cryptoPrice}</div>
-                      <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
-                        {config.crypto_address || "（站长未设置收款地址）"}
-                      </div>
-                      <button onClick={handleVerifyCrypto} disabled={verifyingCrypto}
-                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center gap-2">
-                        {verifyingCrypto ? <><Loader2 className="w-4 h-4 animate-spin" />正在链上查询中...</> : "我已完成转账，验证到账"}
-                      </button>
+                    {/* Header */}
+                    <div className="bg-client-primary/5 border-b border-border px-6 py-4 rounded-t-2xl">
+                      <h3 className="text-lg font-bold">收银台 — {checkoutData?.planName}</h3>
+                      <p className="text-sm text-muted-foreground">订单金额：<span className="text-client-primary font-extrabold">¥{checkoutData?.price}</span></p>
                     </div>
-                  ) : (
-                    <div className="text-center">
-                      {payUrl ? (
-                        <div>
-                          {/* QR Code */}
-                          <p className="text-muted-foreground mb-3 font-bold">电脑端请扫码支付</p>
-                          <div className="w-52 h-52 mx-auto mb-4 bg-background rounded-xl border border-border p-2 flex items-center justify-center">
-                            <img
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}`}
-                              alt="支付二维码"
-                              className="w-full h-full rounded-lg"
-                            />
-                          </div>
 
-                          {/* Mobile link */}
-                          <p className="text-muted-foreground text-sm mb-3">手机端可直接点击下方按钮</p>
-                          <a href={payUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-block bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-md mb-6">
-                            前往支付页面
-                          </a>
+                    <div className="p-6">
+                      {/* === Status Banner === */}
+                      <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${
+                        payStatus === "success"
+                          ? "bg-success/10 border-success/30 text-success"
+                          : payStatus === "processing"
+                          ? "bg-accent/10 border-accent/30 text-accent"
+                          : countdown === 0
+                          ? "bg-destructive/10 border-destructive/30 text-destructive"
+                          : "bg-warning/10 border-warning/30 text-warning"
+                      }`}>
+                        {payStatus === "success" ? (
+                          <>
+                            <CheckCircle2 className="w-6 h-6 shrink-0" />
+                            <div>
+                              <p className="font-bold">支付成功！</p>
+                              <p className="text-sm opacity-80">订单已完成，正在同步到后台...</p>
+                            </div>
+                          </>
+                        ) : payStatus === "processing" ? (
+                          <>
+                            <Loader2 className="w-6 h-6 shrink-0 animate-spin" />
+                            <div>
+                              <p className="font-bold">正在查询支付状态...</p>
+                              <p className="text-sm opacity-80">请稍候，系统正在确认您的付款</p>
+                            </div>
+                          </>
+                        ) : countdown === 0 ? (
+                          <>
+                            <AlertCircle className="w-6 h-6 shrink-0" />
+                            <div>
+                              <p className="font-bold">订单已过期</p>
+                              <p className="text-sm opacity-80">请关闭窗口重新创建订单</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Timer className="w-6 h-6 shrink-0 animate-pulse" />
+                            <div className="flex-1">
+                              <p className="font-bold">等待支付中</p>
+                              <p className="text-sm opacity-80">系统每5秒自动检测付款状态</p>
+                            </div>
+                            <div className="text-2xl font-mono font-extrabold tabular-nums">
+                              {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* === Payment Content === */}
+                      {["usdt", "trx"].includes(selectedMethod) ? (
+                        <div className="text-center">
+                          <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
+                            ⚠️ 请严格按照精确金额付款，否则无法自动到账！
+                          </div>
+                          <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
+                          <div className="text-4xl font-extrabold text-client-primary mb-4">{cryptoPrice}</div>
+                          <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
+                            {config.crypto_address || "（站长未设置收款地址）"}
+                          </div>
+                          <button onClick={handleVerifyCrypto} disabled={verifyingCrypto}
+                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center gap-2">
+                            {verifyingCrypto ? <><Loader2 className="w-4 h-4 animate-spin" />正在链上查询中...</> : "我已完成转账，验证到账"}
+                          </button>
                         </div>
                       ) : (
-                        <div>
-                          <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
-                            <QrCode className="w-12 h-12 text-muted-foreground" />
-                            <span className="absolute text-muted-foreground font-bold">扫码支付</span>
-                          </div>
-                          <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}</p>
+                        <div className="text-center">
+                          {payUrl ? (
+                            <div>
+                              <p className="text-muted-foreground mb-3 font-bold">电脑端请扫码支付</p>
+                              <div className="w-52 h-52 mx-auto mb-4 bg-background rounded-xl border border-border p-2 flex items-center justify-center">
+                                <img
+                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}`}
+                                  alt="支付二维码"
+                                  className="w-full h-full rounded-lg"
+                                />
+                              </div>
+                              <p className="text-muted-foreground text-sm mb-3">手机端可直接点击下方按钮</p>
+                              <a href={payUrl} target="_blank" rel="noopener noreferrer"
+                                className="inline-block bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-md mb-6">
+                                前往支付页面
+                              </a>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
+                                <QrCode className="w-12 h-12 text-muted-foreground" />
+                                <span className="absolute text-muted-foreground font-bold">扫码支付</span>
+                              </div>
+                              <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData?.price}</p>
+                            </div>
+                          )}
+                          <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing" || countdown === 0}
+                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center gap-2">
+                            {payStatus === "processing" ? <><Loader2 className="w-4 h-4 animate-spin" />正在查询支付状态...</> : "我已完成付款，查询状态"}
+                          </button>
                         </div>
                       )}
-                      <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing" || countdown === 0}
-                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center gap-2">
-                        {payStatus === "processing" ? <><Loader2 className="w-4 h-4 animate-spin" />正在查询支付状态...</> : "我已完成付款，查询状态"}
-                      </button>
+                      {error && <p className="text-destructive text-sm mt-4 text-center">{error}</p>}
                     </div>
-                  )}
-                  {error && <p className="text-destructive text-sm mt-4 text-center">{error}</p>}
+                  </div>
                 </div>
               )}
             </div>
