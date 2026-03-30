@@ -1,21 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  User, CreditCard, Activity, Clock, LogOut,
-  ShieldCheck, ChevronRight, CheckCircle2,
-  Smartphone, Bitcoin, QrCode, Upload, Loader2, AlertCircle, Timer,
+  User,
+  CreditCard,
+  Activity,
+  Clock,
+  LogOut,
+  ShieldCheck,
+  ChevronRight,
+  CheckCircle2,
+  Smartphone,
+  Bitcoin,
+  QrCode,
+  Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient, createOrder, verifyCryptoPayment, checkOrderStatus } from "@/lib/api";
+import { getPublicConfig, lookupClient } from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
   price_quarter: number;
   price_year: number;
-  price_exclusive_month: number;
-  price_exclusive_quarter: number;
-  price_exclusive_year: number;
-  price_shared_month: number;
-  price_shared_quarter: number;
-  price_shared_year: number;
   hupi_wechat: boolean;
   hupi_alipay: boolean;
   crypto_usdt: boolean;
@@ -47,17 +50,12 @@ export default function ClientPortal() {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
   const [qrStatus, setQrStatus] = useState("");
-  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
-  const [payUrl, setPayUrl] = useState<string | null>(null);
-  const [verifyingCrypto, setVerifyingCrypto] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [showPayModal, setShowPayModal] = useState(false);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    getPublicConfig().then(setConfig).catch(() => {});
+    getPublicConfig()
+      .then(setConfig)
+      .catch(() => {});
     // Load jsQR
     if (!(window as any).jsQR) {
       const s = document.createElement("script");
@@ -65,10 +63,6 @@ export default function ClientPortal() {
       s.async = true;
       document.body.appendChild(s);
     }
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      if (countdownRef.current) clearInterval(countdownRef.current);
-    };
   }, []);
 
   const extractUuid = (input: string) => {
@@ -165,136 +159,28 @@ export default function ClientPortal() {
   const initiateCheckout = (months: number, price: number, planName: string) => {
     setCheckoutData({ months, price, planName });
     setSelectedMethod("");
-    setCurrentOrderId(null);
-    setPayUrl(null);
-    setError("");
-    if (pollingRef.current) clearInterval(pollingRef.current);
     setTab("checkout");
   };
 
   const handleSelectCrypto = (method: string) => {
     setSelectedMethod(method);
-    setCurrentOrderId(null);
-    setPayUrl(null);
-    setError("");
     if (checkoutData) {
       const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
       setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
     }
   };
 
-  const handleCreateOrder = async (method: string) => {
-    if (!checkoutData) return;
+  const confirmPayment = () => {
     setPayStatus("processing");
-    try {
-      const isCrypto = method === "usdt" || method === "trx";
-      const res = await createOrder({
-        uuid,
-        planName: checkoutData.planName,
-        months: checkoutData.months,
-        amount: checkoutData.price,
-        paymentMethod: method,
-        cryptoAmount: isCrypto ? cryptoPrice : undefined,
-        cryptoCurrency: isCrypto ? method.toUpperCase() : undefined,
-      });
-      if (res?.success) {
-        setCurrentOrderId(res.orderId);
-        if (res.payUrl) setPayUrl(res.payUrl);
-        setShowPayModal(true);
-        // Start 20-minute countdown
-        setCountdown(20 * 60);
-        if (countdownRef.current) clearInterval(countdownRef.current);
-        countdownRef.current = setInterval(() => {
-          setCountdown(prev => {
-            if (prev <= 1) {
-              if (countdownRef.current) clearInterval(countdownRef.current);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-        // Start auto-polling for Hupi payments (every 5 seconds)
-        if (method === "wechat" || method === "alipay") {
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          pollingRef.current = setInterval(async () => {
-            try {
-              const statusRes = await checkOrderStatus(res.orderId);
-              if (statusRes?.status === "fulfilled" || statusRes?.status === "paid" || statusRes?.status === "paid_unfulfilled") {
-                if (pollingRef.current) clearInterval(pollingRef.current);
-                if (countdownRef.current) clearInterval(countdownRef.current);
-                setPayStatus("success");
-                if (checkoutData) {
-                  const newExpiry = new Date(clientData.expiryDate);
-                  newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
-                  setClientData(prev => ({ ...prev, trafficUsed: 0, expiryDate: newExpiry.getTime() }));
-                }
-                // Auto close modal after 2s on success
-                setTimeout(() => {
-                  setShowPayModal(false);
-                  setTab("renew");
-                }, 2000);
-              }
-            } catch {}
-          }, 5000);
-        }
-        setPayStatus(null);
-      } else {
-        setPayStatus(null);
-        setError(res?.error || "创建订单失败");
+    setTimeout(() => {
+      setPayStatus("success");
+      if (checkoutData) {
+        const newExpiry = new Date(clientData.expiryDate);
+        newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+        setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
       }
-    } catch {
-      setPayStatus(null);
-      setError("创建订单失败，请重试");
-    }
-  };
-
-  const handleVerifyCrypto = async () => {
-    if (!currentOrderId) return;
-    setVerifyingCrypto(true);
-    try {
-      const res = await verifyCryptoPayment(currentOrderId);
-      if (res?.success && (res.status === "fulfilled" || res.status === "paid_unfulfilled")) {
-        setPayStatus("success");
-        if (res.status === "fulfilled" && checkoutData) {
-          const newExpiry = new Date(clientData.expiryDate);
-          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
-          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
-        }
-        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
-      } else {
-        setError(res?.message || "暂未检测到转账，请稍后重试");
-      }
-    } catch {
-      setError("验证失败，请稍后重试");
-    } finally {
-      setVerifyingCrypto(false);
-    }
-  };
-
-  const handleCheckHupiOrder = async () => {
-    if (!currentOrderId) return;
-    setPayStatus("processing");
-    try {
-      const res = await checkOrderStatus(currentOrderId);
-      if (res?.status === "fulfilled") {
-        setPayStatus("success");
-        if (checkoutData) {
-          const newExpiry = new Date(clientData.expiryDate);
-          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
-          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
-        }
-        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
-      } else if (res?.status === "paid" || res?.status === "paid_unfulfilled") {
-        setPayStatus("success");
-        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
-      } else {
-        setPayStatus(null);
-        setError("支付尚未完成，请完成支付后再查询");
-      }
-    } catch {
-      setPayStatus(null);
-      setError("查询失败，请稍后重试");
-    }
+      setTab("renew");
+    }, 1500);
   };
 
   // Login screen
@@ -314,7 +200,9 @@ export default function ClientPortal() {
                   value={loginInput}
                   onChange={(e) => setLoginInput(e.target.value)}
                   onPaste={handlePaste}
-                  placeholder={"例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"}
+                  placeholder={
+                    "例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"
+                  }
                   className="w-full px-4 py-3 rounded-lg border border-input focus:ring-2 focus:ring-client-primary focus:border-transparent outline-none min-h-[120px] resize-none pb-12 bg-background text-foreground"
                   required
                 />
@@ -328,11 +216,25 @@ export default function ClientPortal() {
                     <Upload className="w-4 h-4 mr-1.5" />
                     扫码/传图
                   </button>
-                  <input type="file" ref={fileInputRef} onChange={e => { const f = e.target.files?.[0]; if (f) processImageFile(f); e.target.value = ""; }} accept="image/*" className="hidden" />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) processImageFile(f);
+                      e.target.value = "";
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
                 </div>
               </div>
               {error && <p className="text-destructive text-sm mb-4">{error}</p>}
-              <button type="submit" disabled={loading} className="w-full bg-client-primary hover:opacity-90 text-client-primary-foreground font-bold py-3 rounded-lg transition-colors shadow-lg">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-client-primary hover:opacity-90 text-client-primary-foreground font-bold py-3 rounded-lg transition-colors shadow-lg"
+              >
                 {loading ? "智能解析并登录..." : "解析登录"}
               </button>
             </form>
@@ -349,17 +251,29 @@ export default function ClientPortal() {
         <div className="flex items-center text-client-primary font-bold text-xl">
           <Activity className="mr-2" /> 自助服务中心
         </div>
-        <button onClick={() => setLogged(false)} className="text-muted-foreground hover:text-foreground flex items-center text-sm font-medium">
+        <button
+          onClick={() => setLogged(false)}
+          className="text-muted-foreground hover:text-foreground flex items-center text-sm font-medium"
+        >
           <LogOut className="w-4 h-4 mr-1" /> 退出
         </button>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="md:col-span-1 space-y-3">
-          <button onClick={() => setTab("dashboard")} className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "dashboard" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}>
+          <button
+            onClick={() => setTab("dashboard")}
+            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "dashboard" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}
+          >
             <Clock className="w-5 h-5 mr-3" /> 我的状态
           </button>
-          <button onClick={() => { setTab("renew"); setPayStatus(null); }} className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "renew" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}>
+          <button
+            onClick={() => {
+              setTab("renew");
+              setPayStatus(null);
+            }}
+            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "renew" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}
+          >
             <CreditCard className="w-5 h-5 mr-3" /> 在线续费
           </button>
         </div>
@@ -371,7 +285,9 @@ export default function ClientPortal() {
               <div className="bg-client-primary/10 border border-client-primary/20 text-client-primary px-4 py-3 rounded-xl mb-6 flex items-center shadow-sm">
                 <ShieldCheck className="w-5 h-5 mr-2" />
                 <span className="font-medium text-sm">当前登录节点 UUID: </span>
-                <span className="ml-2 font-mono text-xs bg-background px-2 py-1 rounded border border-border truncate">{uuid}</span>
+                <span className="ml-2 font-mono text-xs bg-background px-2 py-1 rounded border border-border truncate">
+                  {uuid}
+                </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-client-primary/5 p-6 rounded-2xl border border-client-primary/20">
@@ -380,7 +296,9 @@ export default function ClientPortal() {
                     <span className="text-5xl font-extrabold text-foreground">{getDaysLeft()}</span>
                     <span className="text-client-primary font-bold mb-1 ml-2">天</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-3 font-medium">到期日: {new Date(clientData.expiryDate).toLocaleDateString()}</p>
+                  <p className="text-sm text-muted-foreground mt-3 font-medium">
+                    到期日: {new Date(clientData.expiryDate).toLocaleDateString()}
+                  </p>
                 </div>
                 <div className="bg-success/5 p-6 rounded-2xl border border-success/20">
                   <div className="text-success font-bold mb-2">本月流量使用情况</div>
@@ -389,7 +307,10 @@ export default function ClientPortal() {
                     <span className="text-success font-bold mb-1 ml-2">/ {clientData.trafficTotal} GB</span>
                   </div>
                   <div className="w-full bg-success/20 rounded-full h-2.5">
-                    <div className="bg-success h-2.5 rounded-full" style={{ width: `${(clientData.trafficUsed / clientData.trafficTotal) * 100}%` }} />
+                    <div
+                      className="bg-success h-2.5 rounded-full"
+                      style={{ width: `${(clientData.trafficUsed / clientData.trafficTotal) * 100}%` }}
+                    />
                   </div>
                 </div>
               </div>
@@ -398,76 +319,81 @@ export default function ClientPortal() {
 
           {tab === "renew" && config && (
             <div className="animate-fade-in">
-              <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">购买与续费</h2>
+              <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">
+                购买与续费，独享的用户续费共享，导致链接被锁后果自负
+              </h2>
               {payStatus === "success" ? (
                 <div className="bg-success/10 border border-success/20 p-8 rounded-2xl text-center">
                   <CheckCircle2 className="w-16 h-16 text-success mx-auto mb-4" />
                   <h3 className="text-2xl font-bold mb-2">续费成功！</h3>
                   <p className="text-muted-foreground mb-6">您的节点数据已实时同步至后台，流量已重置。</p>
-                  <button onClick={() => setTab("dashboard")} className="bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-lg">
+                  <button
+                    onClick={() => setTab("dashboard")}
+                    className="bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-lg"
+                  >
                     查看最新状态
                   </button>
                 </div>
               ) : (
-                <div className="space-y-8">
-                  {/* 独享分组 */}
-                  <div>
-                    <h3 className="text-lg font-bold mb-4 flex items-center"><span className="bg-client-primary/10 text-client-primary px-3 py-1 rounded-lg">🔒 独享分组</span></h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {[
-                        { label: "独享月付", price: config.price_exclusive_month, months: 1, days: 30, suffix: "/月", featured: false },
-                        { label: "独享季付", price: config.price_exclusive_quarter, months: 3, days: 90, suffix: "/3个月", featured: true },
-                        { label: "独享年付", price: config.price_exclusive_year, months: 12, days: 365, suffix: "/年", featured: false },
-                      ].map(plan => (
-                        <div key={plan.label} className={`rounded-2xl p-5 relative transition-colors ${plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-1 bg-card" : "border border-border hover:border-client-primary"}`}>
-                          {plan.featured && (
-                            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-3 py-1 rounded-full shadow-sm">推荐</div>
-                          )}
-                          <h3 className={`text-base font-bold mb-1 ${plan.featured ? "" : "text-muted-foreground"}`}>{plan.label}</h3>
-                          <div className="text-3xl font-extrabold text-client-primary mb-3">
-                            ¥{plan.price}<span className="text-sm font-normal text-muted-foreground">{plan.suffix}</span>
-                          </div>
-                          <ul className="text-xs text-muted-foreground space-y-2 mb-5">
-                            <li className="flex items-center"><ChevronRight className="w-3 h-3 text-client-primary mr-1" /> 增加 {plan.days} 天</li>
-                            <li className="flex items-center"><ChevronRight className="w-3 h-3 text-client-primary mr-1" /> 立即重置流量</li>
-                          </ul>
-                          <button onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
-                            className={`w-full font-bold py-2.5 rounded-xl transition-colors text-sm ${plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}>
-                            立即购买
-                          </button>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                  {[
+                    {
+                      label: "月付套餐",
+                      price: config.price_month,
+                      months: 1,
+                      days: 30,
+                      suffix: "/月",
+                      featured: false,
+                    },
+                    {
+                      label: "季付套餐",
+                      price: config.price_quarter,
+                      months: 3,
+                      days: 90,
+                      suffix: "/3个月",
+                      featured: true,
+                    },
+                    {
+                      label: "年付套餐",
+                      price: config.price_year,
+                      months: 12,
+                      days: 365,
+                      suffix: "/年",
+                      featured: false,
+                    },
+                  ].map((plan) => (
+                    <div
+                      key={plan.label}
+                      className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-client-primary"}`}
+                    >
+                      {plan.featured && (
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                          推荐选择
                         </div>
-                      ))}
+                      )}
+                      <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
+                        {plan.label}
+                      </h3>
+                      <div className="text-4xl font-extrabold text-client-primary mb-4">
+                        ¥{plan.price}
+                        <span className="text-base font-normal text-muted-foreground">{plan.suffix}</span>
+                      </div>
+                      <ul className="text-sm text-muted-foreground space-y-3 mb-8">
+                        <li className="flex items-center">
+                          <ChevronRight className="w-4 h-4 text-client-primary mr-1" /> 增加 {plan.days} 天有效期
+                        </li>
+                        <li className="flex items-center">
+                          <ChevronRight className="w-4 h-4 text-client-primary mr-1" /> 立即重置流量
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
+                        className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}
+                      >
+                        立即购买
+                      </button>
                     </div>
-                  </div>
-                  {/* 共享分组 */}
-                  <div>
-                    <h3 className="text-lg font-bold mb-4 flex items-center"><span className="bg-success/10 text-success px-3 py-1 rounded-lg">👥 共享分组</span></h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {[
-                        { label: "共享月付", price: config.price_shared_month, months: 1, days: 30, suffix: "/月", featured: false },
-                        { label: "共享季付", price: config.price_shared_quarter, months: 3, days: 90, suffix: "/3个月", featured: true },
-                        { label: "共享年付", price: config.price_shared_year, months: 12, days: 365, suffix: "/年", featured: false },
-                      ].map(plan => (
-                        <div key={plan.label} className={`rounded-2xl p-5 relative transition-colors ${plan.featured ? "border-2 border-success shadow-xl transform md:-translate-y-1 bg-card" : "border border-border hover:border-success"}`}>
-                          {plan.featured && (
-                            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-success text-success-foreground text-xs font-bold px-3 py-1 rounded-full shadow-sm">推荐</div>
-                          )}
-                          <h3 className={`text-base font-bold mb-1 ${plan.featured ? "" : "text-muted-foreground"}`}>{plan.label}</h3>
-                          <div className="text-3xl font-extrabold text-success mb-3">
-                            ¥{plan.price}<span className="text-sm font-normal text-muted-foreground">{plan.suffix}</span>
-                          </div>
-                          <ul className="text-xs text-muted-foreground space-y-2 mb-5">
-                            <li className="flex items-center"><ChevronRight className="w-3 h-3 text-success mr-1" /> 增加 {plan.days} 天</li>
-                            <li className="flex items-center"><ChevronRight className="w-3 h-3 text-success mr-1" /> 立即重置流量</li>
-                          </ul>
-                          <button onClick={() => initiateCheckout(plan.months, plan.price, plan.label)}
-                            className={`w-full font-bold py-2.5 rounded-xl transition-colors text-sm ${plan.featured ? "bg-success text-success-foreground hover:opacity-90 shadow-md" : "bg-success/10 text-success hover:bg-success hover:text-success-foreground"}`}>
-                            立即购买
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -476,7 +402,10 @@ export default function ClientPortal() {
           {tab === "checkout" && checkoutData && config && (
             <div className="animate-fade-in max-w-2xl mx-auto">
               <div className="flex items-center mb-6">
-                <button onClick={() => setTab("renew")} className="text-muted-foreground hover:text-foreground mr-4 font-medium flex items-center">
+                <button
+                  onClick={() => setTab("renew")}
+                  className="text-muted-foreground hover:text-foreground mr-4 font-medium flex items-center"
+                >
                   &larr; 返回
                 </button>
                 <h2 className="text-2xl font-bold">收银台</h2>
@@ -493,180 +422,74 @@ export default function ClientPortal() {
               <h3 className="font-bold mb-4">请选择支付方式</h3>
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {config.hupi_wechat && (
-                  <button onClick={() => { setSelectedMethod("wechat"); setCurrentOrderId(null); setPayUrl(null); setError(""); }} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
+                  <button
+                    onClick={() => setSelectedMethod("wechat")}
+                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}
+                  >
                     <Smartphone className="w-8 h-8 mb-2 text-success" />
                     <span className="font-bold">微信支付</span>
                   </button>
                 )}
                 {config.hupi_alipay && (
-                  <button onClick={() => { setSelectedMethod("alipay"); setCurrentOrderId(null); setPayUrl(null); setError(""); }} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}>
+                  <button
+                    onClick={() => setSelectedMethod("alipay")}
+                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}
+                  >
                     <Smartphone className="w-8 h-8 mb-2 text-accent" />
                     <span className="font-bold">支付宝</span>
                   </button>
                 )}
                 {config.crypto_usdt && (
-                  <button onClick={() => handleSelectCrypto("usdt")} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "usdt" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
+                  <button
+                    onClick={() => handleSelectCrypto("usdt")}
+                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "usdt" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}
+                  >
                     <Bitcoin className="w-8 h-8 mb-2 text-success" />
                     <span className="font-bold">USDT (TRC20)</span>
                   </button>
                 )}
                 {config.crypto_trx && (
-                  <button onClick={() => handleSelectCrypto("trx")} className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "trx" ? "border-destructive bg-destructive/10 text-destructive" : "border-border hover:border-destructive/50"}`}>
+                  <button
+                    onClick={() => handleSelectCrypto("trx")}
+                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "trx" ? "border-destructive bg-destructive/10 text-destructive" : "border-border hover:border-destructive/50"}`}
+                  >
                     <Bitcoin className="w-8 h-8 mb-2 text-destructive" />
                     <span className="font-bold">TRX (波场)</span>
                   </button>
                 )}
               </div>
 
-              {selectedMethod && !currentOrderId && (
-                <div className="text-center mt-4">
-                  <button onClick={() => handleCreateOrder(selectedMethod)} disabled={payStatus === "processing"}
-                    className="bg-client-primary text-client-primary-foreground font-bold py-3 px-8 rounded-xl hover:opacity-90 transition-colors shadow-md">
-                    {payStatus === "processing" ? "正在创建订单..." : "确认支付方式，创建订单"}
-                  </button>
-                  {error && <p className="text-destructive text-sm mt-3">{error}</p>}
-                </div>
-              )}
-
-              {/* Payment Modal */}
-              {showPayModal && currentOrderId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                  {/* Backdrop */}
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => {
-                    if (payStatus !== "processing") {
-                      if (pollingRef.current) clearInterval(pollingRef.current);
-                      if (countdownRef.current) clearInterval(countdownRef.current);
-                      setShowPayModal(false);
-                      setCurrentOrderId(null);
-                      setPayUrl(null);
-                      setCountdown(0);
-                      setPayStatus(null);
-                      setError("");
-                    }
-                  }} />
-                  {/* Modal */}
-                  <div className="relative bg-card rounded-2xl shadow-2xl border border-border w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-fade-in">
-                    {/* Close button */}
-                    <button onClick={() => {
-                      if (pollingRef.current) clearInterval(pollingRef.current);
-                      if (countdownRef.current) clearInterval(countdownRef.current);
-                      setShowPayModal(false);
-                      setCurrentOrderId(null);
-                      setPayUrl(null);
-                      setCountdown(0);
-                      setPayStatus(null);
-                      setError("");
-                    }} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-10 text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
-                      ✕
-                    </button>
-
-                    {/* Header */}
-                    <div className="bg-client-primary/5 border-b border-border px-6 py-4 rounded-t-2xl">
-                      <h3 className="text-lg font-bold">收银台 — {checkoutData?.planName}</h3>
-                      <p className="text-sm text-muted-foreground">订单金额：<span className="text-client-primary font-extrabold">¥{checkoutData?.price}</span></p>
-                    </div>
-
-                    <div className="p-6">
-                      {/* === Status Banner === */}
-                      <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${
-                        payStatus === "success"
-                          ? "bg-success/10 border-success/30 text-success"
-                          : payStatus === "processing"
-                          ? "bg-accent/10 border-accent/30 text-accent"
-                          : countdown === 0
-                          ? "bg-destructive/10 border-destructive/30 text-destructive"
-                          : "bg-warning/10 border-warning/30 text-warning"
-                      }`}>
-                        {payStatus === "success" ? (
-                          <>
-                            <CheckCircle2 className="w-6 h-6 shrink-0" />
-                            <div>
-                              <p className="font-bold">支付成功！</p>
-                              <p className="text-sm opacity-80">订单已完成，正在同步到后台...</p>
-                            </div>
-                          </>
-                        ) : payStatus === "processing" ? (
-                          <>
-                            <Loader2 className="w-6 h-6 shrink-0 animate-spin" />
-                            <div>
-                              <p className="font-bold">正在查询支付状态...</p>
-                              <p className="text-sm opacity-80">请稍候，系统正在确认您的付款</p>
-                            </div>
-                          </>
-                        ) : countdown === 0 ? (
-                          <>
-                            <AlertCircle className="w-6 h-6 shrink-0" />
-                            <div>
-                              <p className="font-bold">订单已过期</p>
-                              <p className="text-sm opacity-80">请关闭窗口重新创建订单</p>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Timer className="w-6 h-6 shrink-0 animate-pulse" />
-                            <div className="flex-1">
-                              <p className="font-bold">等待支付中</p>
-                              <p className="text-sm opacity-80">系统每5秒自动检测付款状态</p>
-                            </div>
-                            <div className="text-2xl font-mono font-extrabold tabular-nums">
-                              {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}
-                            </div>
-                          </>
-                        )}
+              {selectedMethod && (
+                <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
+                  {["usdt", "trx"].includes(selectedMethod) ? (
+                    <div>
+                      <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
+                        ⚠️ 防撞单机制：请严格按照下方显示的精确金额付款，否则系统无法自动到账！
                       </div>
-
-                      {/* === Payment Content === */}
-                      {["usdt", "trx"].includes(selectedMethod) ? (
-                        <div className="text-center">
-                          <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
-                            ⚠️ 请严格按照精确金额付款，否则无法自动到账！
-                          </div>
-                          <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
-                          <div className="text-4xl font-extrabold text-client-primary mb-4">{cryptoPrice}</div>
-                          <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
-                            {config.crypto_address || "（站长未设置收款地址）"}
-                          </div>
-                          <button onClick={handleVerifyCrypto} disabled={verifyingCrypto}
-                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center gap-2">
-                            {verifyingCrypto ? <><Loader2 className="w-4 h-4 animate-spin" />正在链上查询中...</> : "我已完成转账，验证到账"}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          {payUrl ? (
-                            <div>
-                              <p className="text-muted-foreground mb-3 font-bold">电脑端请扫码支付</p>
-                              <div className="w-52 h-52 mx-auto mb-4 bg-background rounded-xl border border-border p-2 flex items-center justify-center">
-                                <img
-                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}`}
-                                  alt="支付二维码"
-                                  className="w-full h-full rounded-lg"
-                                />
-                              </div>
-                              <p className="text-muted-foreground text-sm mb-3">手机端可直接点击下方按钮</p>
-                              <a href={payUrl} target="_blank" rel="noopener noreferrer"
-                                className="inline-block bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-md mb-6">
-                                前往支付页面
-                              </a>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
-                                <QrCode className="w-12 h-12 text-muted-foreground" />
-                                <span className="absolute text-muted-foreground font-bold">扫码支付</span>
-                              </div>
-                              <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData?.price}</p>
-                            </div>
-                          )}
-                          <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing" || countdown === 0}
-                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center gap-2">
-                            {payStatus === "processing" ? <><Loader2 className="w-4 h-4 animate-spin" />正在查询支付状态...</> : "我已完成付款，查询状态"}
-                          </button>
-                        </div>
-                      )}
-                      {error && <p className="text-destructive text-sm mt-4 text-center">{error}</p>}
+                      <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
+                      <div className="text-4xl font-extrabold text-client-primary mb-6">{cryptoPrice}</div>
+                      <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
+                        {config.crypto_address || "（站长未设置收款地址）"}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div>
+                      <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
+                        <QrCode className="w-12 h-12 text-muted-foreground" />
+                        <span className="absolute text-muted-foreground font-bold">扫码支付</span>
+                      </div>
+                      <p className="text-muted-foreground mb-6 font-bold">
+                        请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    onClick={confirmPayment}
+                    disabled={payStatus === "processing"}
+                    className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center"
+                  >
+                    {payStatus === "processing" ? "正在验证订单..." : "我已完成付款"}
+                  </button>
                 </div>
               )}
             </div>
