@@ -427,7 +427,16 @@ export default function ClientPortal() {
                 )}
               </div>
 
-              {selectedMethod && (
+              {selectedMethod && !currentOrderId && (
+                <div className="text-center mt-4">
+                  <button onClick={() => handleCreateOrder(selectedMethod)} disabled={payStatus === "processing"}
+                    className="bg-client-primary text-client-primary-foreground font-bold py-3 px-8 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                    {payStatus === "processing" ? "正在创建订单..." : "确认支付方式，创建订单"}
+                  </button>
+                </div>
+              )}
+
+              {selectedMethod && currentOrderId && (
                 <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
                   {["usdt", "trx"].includes(selectedMethod) ? (
                     <div>
@@ -439,20 +448,37 @@ export default function ClientPortal() {
                       <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
                         {config.crypto_address || "（站长未设置收款地址）"}
                       </div>
+                      <button onClick={handleVerifyCrypto} disabled={verifyingCrypto}
+                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
+                        {verifyingCrypto ? "正在链上查询中..." : "我已完成转账，验证到账"}
+                      </button>
                     </div>
                   ) : (
                     <div>
-                      <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
-                        <QrCode className="w-12 h-12 text-muted-foreground" />
-                        <span className="absolute text-muted-foreground font-bold">扫码支付</span>
-                      </div>
-                      <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}</p>
+                      {payUrl ? (
+                        <div>
+                          <p className="text-muted-foreground mb-4 font-bold">请点击下方链接或扫码完成付款</p>
+                          <a href={payUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-block bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-md mb-6">
+                            前往支付页面
+                          </a>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
+                            <QrCode className="w-12 h-12 text-muted-foreground" />
+                            <span className="absolute text-muted-foreground font-bold">扫码支付</span>
+                          </div>
+                          <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}</p>
+                        </div>
+                      )}
+                      <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing"}
+                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
+                        {payStatus === "processing" ? "正在查询支付状态..." : "我已完成付款，查询状态"}
+                      </button>
                     </div>
                   )}
-                  <button onClick={confirmPayment} disabled={payStatus === "processing"}
-                    className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
-                    {payStatus === "processing" ? "正在验证订单..." : "我已完成付款"}
-                  </button>
+                  {error && <p className="text-destructive text-sm mt-4">{error}</p>}
                 </div>
               )}
             </div>
