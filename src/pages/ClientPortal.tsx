@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   User, CreditCard, Activity, Clock, LogOut,
   ShieldCheck, ChevronRight, CheckCircle2,
-  Smartphone, Bitcoin, QrCode, Upload,
+  Smartphone, Bitcoin, QrCode, Upload, Loader2, AlertCircle, Timer,
 } from "lucide-react";
 import { getPublicConfig, lookupClient, createOrder, verifyCryptoPayment, checkOrderStatus } from "@/lib/api";
 
