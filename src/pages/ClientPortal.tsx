@@ -13,7 +13,7 @@ import {
   QrCode,
   Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient } from "@/lib/api";
+import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment } from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
@@ -56,6 +56,13 @@ export default function ClientPortal() {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
   const [qrStatus, setQrStatus] = useState("");
+  const [orderId, setOrderId] = useState("");
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [payUrl, setPayUrl] = useState("");
+  const [orderCreating, setOrderCreating] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -162,9 +169,22 @@ export default function ClientPortal() {
 
   const getDaysLeft = () => Math.max(0, Math.ceil((clientData.expiryDate - Date.now()) / 86400000));
 
+  const cleanupPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+  };
+
+  useEffect(() => () => cleanupPolling(), []);
+
   const initiateCheckout = (months: number, price: number, planName: string) => {
+    cleanupPolling();
     setCheckoutData({ months, price, planName });
     setSelectedMethod("");
+    setPayStatus(null);
+    setOrderId("");
+    setQrCodeUrl("");
+    setPayUrl("");
+    setCountdown(0);
     setTab("checkout");
   };
 
@@ -176,18 +196,110 @@ export default function ClientPortal() {
     }
   };
 
-  const confirmPayment = () => {
-    setPayStatus("processing");
-    setTimeout(() => {
-      setPayStatus("success");
-      if (checkoutData) {
-        const newExpiry = new Date(clientData.expiryDate);
-        newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
-        setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
-      }
-      setTab("renew");
-    }, 1500);
+  const startPolling = (oid: string, isCrypto: boolean) => {
+    setCountdown(1200); // 20 minutes
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { cleanupPolling(); setPayStatus("expired"); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+
+    pollRef.current = setInterval(async () => {
+      try {
+        if (isCrypto) {
+          const res = await verifyCryptoPayment(oid);
+          if (res?.success && (res.status === "fulfilled" || res.status === "paid_unfulfilled")) {
+            cleanupPolling();
+            setPayStatus("success");
+            if (checkoutData) {
+              const newExpiry = new Date(clientData.expiryDate);
+              newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+              setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+            }
+          }
+        } else {
+          const res = await checkOrderStatus(oid);
+          if (res?.status === "fulfilled") {
+            cleanupPolling();
+            setPayStatus("success");
+            if (checkoutData) {
+              const newExpiry = new Date(clientData.expiryDate);
+              newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+              setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+            }
+          } else if (res?.status === "paid_unfulfilled") {
+            cleanupPolling();
+            setPayStatus("paid_unfulfilled");
+          }
+        }
+      } catch {}
+    }, 5000);
   };
+
+  const confirmPayment = async () => {
+    if (!checkoutData || !selectedMethod) return;
+    setOrderCreating(true);
+    setPayStatus("creating");
+    try {
+      const isCrypto = ["usdt", "trx"].includes(selectedMethod);
+      const res = await createOrder({
+        uuid,
+        planName: checkoutData.planName,
+        months: checkoutData.months,
+        amount: checkoutData.price,
+        paymentMethod: selectedMethod,
+        ...(isCrypto ? { cryptoAmount: cryptoPrice, cryptoCurrency: selectedMethod.toUpperCase() } : {}),
+      });
+
+      if (res?.orderId) {
+        setOrderId(res.orderId);
+        if (!isCrypto && res.qrCode) {
+          setQrCodeUrl(res.qrCode);
+        }
+        if (!isCrypto && res.payUrl) {
+          setPayUrl(res.payUrl);
+        }
+        setPayStatus("waiting");
+        startPolling(res.orderId, isCrypto);
+      } else {
+        setPayStatus("error");
+        setError(res?.error || "创建订单失败");
+      }
+    } catch (err: any) {
+      setPayStatus("error");
+      setError(err?.message || "创建订单失败");
+    } finally {
+      setOrderCreating(false);
+    }
+  };
+
+  const handleCryptoVerify = async () => {
+    if (!orderId) return;
+    setPayStatus("verifying");
+    try {
+      const res = await verifyCryptoPayment(orderId);
+      if (res?.success && (res.status === "fulfilled" || res.status === "paid_unfulfilled")) {
+        cleanupPolling();
+        setPayStatus("success");
+        if (checkoutData) {
+          const newExpiry = new Date(clientData.expiryDate);
+          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+        }
+      } else {
+        setPayStatus("waiting");
+        setError(res?.message || "暂未检测到转账，请稍后再试");
+        setTimeout(() => setError(""), 3000);
+      }
+    } catch {
+      setPayStatus("waiting");
+      setError("验证失败，请稍后重试");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const formatCountdown = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   // Login screen
   if (!logged) {
@@ -503,94 +615,177 @@ export default function ClientPortal() {
             <div className="animate-fade-in max-w-2xl mx-auto">
               <div className="flex items-center mb-6">
                 <button
-                  onClick={() => setTab("renew")}
+                  onClick={() => { cleanupPolling(); setTab("renew"); setPayStatus(null); }}
                   className="text-muted-foreground hover:text-foreground mr-4 font-medium flex items-center"
                 >
                   &larr; 返回
                 </button>
                 <h2 className="text-2xl font-bold">收银台</h2>
+                {countdown > 0 && (
+                  <span className="ml-auto text-sm font-mono text-muted-foreground">⏱ {formatCountdown(countdown)}</span>
+                )}
               </div>
 
-              <div className="bg-muted border border-border rounded-2xl p-6 mb-6">
-                <h3 className="text-muted-foreground font-bold mb-1">订单信息</h3>
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold">{checkoutData.planName}</span>
-                  <span className="text-2xl font-extrabold text-client-primary">¥{checkoutData.price}</span>
+              {/* Status banners */}
+              {payStatus === "success" && (
+                <div className="bg-success/10 border border-success/20 p-6 rounded-2xl text-center mb-6">
+                  <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-3" />
+                  <h3 className="text-xl font-bold mb-2">支付成功！续期已完成</h3>
+                  <button onClick={() => { setTab("dashboard"); setPayStatus(null); }} className="bg-success text-success-foreground font-bold px-6 py-2 rounded-xl mt-2">
+                    查看最新状态
+                  </button>
                 </div>
-              </div>
+              )}
+              {payStatus === "paid_unfulfilled" && (
+                <div className="bg-warning/10 border border-warning/20 p-6 rounded-2xl text-center mb-6">
+                  <h3 className="text-lg font-bold mb-2">⚠️ 支付已确认，但续期操作失败</h3>
+                  <p className="text-muted-foreground text-sm">请联系站长处理，订单号：{orderId}</p>
+                </div>
+              )}
+              {payStatus === "expired" && (
+                <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-2xl text-center mb-6">
+                  <h3 className="text-lg font-bold mb-2">⏰ 订单已超时</h3>
+                  <p className="text-muted-foreground text-sm mb-3">请返回重新下单</p>
+                  <button onClick={() => { setTab("renew"); setPayStatus(null); }} className="bg-client-primary text-client-primary-foreground font-bold px-6 py-2 rounded-xl">
+                    重新选择套餐
+                  </button>
+                </div>
+              )}
+              {payStatus === "error" && (
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl text-center mb-6">
+                  <p className="text-destructive font-bold">{error || "创建订单失败，请重试"}</p>
+                </div>
+              )}
 
-              <h3 className="font-bold mb-4">请选择支付方式</h3>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                {config.hupi_wechat && (
-                  <button
-                    onClick={() => setSelectedMethod("wechat")}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}
-                  >
-                    <Smartphone className="w-8 h-8 mb-2 text-success" />
-                    <span className="font-bold">微信支付</span>
-                  </button>
-                )}
-                {config.hupi_alipay && (
-                  <button
-                    onClick={() => setSelectedMethod("alipay")}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}
-                  >
-                    <Smartphone className="w-8 h-8 mb-2 text-accent" />
-                    <span className="font-bold">支付宝</span>
-                  </button>
-                )}
-                {config.crypto_usdt && (
-                  <button
-                    onClick={() => handleSelectCrypto("usdt")}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "usdt" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}
-                  >
-                    <Bitcoin className="w-8 h-8 mb-2 text-success" />
-                    <span className="font-bold">USDT (TRC20)</span>
-                  </button>
-                )}
-                {config.crypto_trx && (
-                  <button
-                    onClick={() => handleSelectCrypto("trx")}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "trx" ? "border-destructive bg-destructive/10 text-destructive" : "border-border hover:border-destructive/50"}`}
-                  >
-                    <Bitcoin className="w-8 h-8 mb-2 text-destructive" />
-                    <span className="font-bold">TRX (波场)</span>
-                  </button>
-                )}
-              </div>
-
-              {selectedMethod && (
-                <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
-                  {["usdt", "trx"].includes(selectedMethod) ? (
-                    <div>
-                      <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
-                        ⚠️ 防撞单机制：请严格按照下方显示的精确金额付款，否则系统无法自动到账！
-                      </div>
-                      <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
-                      <div className="text-4xl font-extrabold text-client-primary mb-6">{cryptoPrice}</div>
-                      <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
-                        {config.crypto_address || "（站长未设置收款地址）"}
-                      </div>
+              {!["success", "expired", "paid_unfulfilled"].includes(payStatus || "") && (
+                <>
+                  <div className="bg-muted border border-border rounded-2xl p-6 mb-6">
+                    <h3 className="text-muted-foreground font-bold mb-1">订单信息</h3>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xl font-bold">{checkoutData.planName}</span>
+                      <span className="text-2xl font-extrabold text-client-primary">¥{checkoutData.price}</span>
                     </div>
-                  ) : (
-                    <div>
-                      <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-6 relative">
-                        <QrCode className="w-12 h-12 text-muted-foreground" />
-                        <span className="absolute text-muted-foreground font-bold">扫码支付</span>
+                  </div>
+
+                  {/* Before order created: select method */}
+                  {!payStatus || payStatus === "error" ? (
+                    <>
+                      <h3 className="font-bold mb-4">请选择支付方式</h3>
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        {config.hupi_wechat && (
+                          <button onClick={() => setSelectedMethod("wechat")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
+                            <Smartphone className="w-8 h-8 mb-2 text-success" /><span className="font-bold">微信支付</span>
+                          </button>
+                        )}
+                        {config.hupi_alipay && (
+                          <button onClick={() => setSelectedMethod("alipay")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}>
+                            <Smartphone className="w-8 h-8 mb-2 text-accent" /><span className="font-bold">支付宝</span>
+                          </button>
+                        )}
+                        {config.crypto_usdt && (
+                          <button onClick={() => handleSelectCrypto("usdt")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "usdt" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
+                            <Bitcoin className="w-8 h-8 mb-2 text-success" /><span className="font-bold">USDT (TRC20)</span>
+                          </button>
+                        )}
+                        {config.crypto_trx && (
+                          <button onClick={() => handleSelectCrypto("trx")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "trx" ? "border-destructive bg-destructive/10 text-destructive" : "border-border hover:border-destructive/50"}`}>
+                            <Bitcoin className="w-8 h-8 mb-2 text-destructive" /><span className="font-bold">TRX (波场)</span>
+                          </button>
+                        )}
                       </div>
-                      <p className="text-muted-foreground mb-6 font-bold">
-                        请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}
-                      </p>
+
+                      {selectedMethod && !["usdt", "trx"].includes(selectedMethod) && (
+                        <button onClick={confirmPayment} disabled={orderCreating}
+                          className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                          {orderCreating ? "正在创建订单..." : "确认支付方式"}
+                        </button>
+                      )}
+
+                      {["usdt", "trx"].includes(selectedMethod) && (
+                        <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
+                          <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
+                            ⚠️ 防撞单机制：请严格按照下方显示的精确金额付款，否则系统无法自动到账！
+                          </div>
+                          <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
+                          <div className="text-4xl font-extrabold text-client-primary mb-6">{cryptoPrice}</div>
+                          <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
+                            {config.crypto_address || "（站长未设置收款地址）"}
+                          </div>
+                          <button onClick={confirmPayment} disabled={orderCreating}
+                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                            {orderCreating ? "正在创建订单..." : "确认下单并去转账"}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* After order created: show payment details */
+                    <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
+                      {payStatus === "creating" && (
+                        <div className="py-8">
+                          <div className="animate-spin w-10 h-10 border-4 border-client-primary border-t-transparent rounded-full mx-auto mb-4" />
+                          <p className="text-muted-foreground font-bold">正在创建订单...</p>
+                        </div>
+                      )}
+
+                      {payStatus === "waiting" && ["usdt", "trx"].includes(selectedMethod) && (
+                        <div>
+                          <div className="bg-success/10 text-success p-3 rounded-lg mb-4 text-sm font-bold border border-success/20">
+                            ✅ 订单已创建，请转账后点击验证
+                          </div>
+                          <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
+                          <div className="text-4xl font-extrabold text-client-primary mb-4">{cryptoPrice}</div>
+                          <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
+                            {config.crypto_address}
+                          </div>
+                          {error && <p className="text-warning text-sm mb-3">{error}</p>}
+                          <button onClick={handleCryptoVerify}
+                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                            我已转账，点击验证
+                          </button>
+                          <p className="text-xs text-muted-foreground mt-3">系统每5秒自动检测链上转账，也可手动点击验证</p>
+                        </div>
+                      )}
+
+                      {payStatus === "waiting" && !["usdt", "trx"].includes(selectedMethod) && (
+                        <div>
+                          <div className="bg-success/10 text-success p-3 rounded-lg mb-4 text-sm font-bold border border-success/20">
+                            ✅ 订单已创建，请扫码支付
+                          </div>
+                          {qrCodeUrl ? (
+                            <img src={qrCodeUrl} alt="支付二维码" className="w-48 h-48 mx-auto mb-4 rounded-xl border border-border" />
+                          ) : payUrl ? (
+                            <div className="mb-4">
+                              <a href={payUrl} target="_blank" rel="noopener noreferrer"
+                                className="inline-block bg-client-primary text-client-primary-foreground font-bold px-6 py-3 rounded-xl hover:opacity-90">
+                                点击打开支付页面
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-4">
+                              <QrCode className="w-12 h-12 text-muted-foreground" />
+                            </div>
+                          )}
+                          <p className="text-muted-foreground font-bold mb-2">
+                            请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}
+                          </p>
+                          <p className="text-xs text-muted-foreground">支付完成后系统将自动确认，请勿关闭此页面</p>
+                        </div>
+                      )}
+
+                      {payStatus === "verifying" && (
+                        <div className="py-4">
+                          <div className="animate-spin w-8 h-8 border-4 border-client-primary border-t-transparent rounded-full mx-auto mb-3" />
+                          <p className="text-muted-foreground font-bold">正在验证链上转账...</p>
+                        </div>
+                      )}
                     </div>
                   )}
-                  <button
-                    onClick={confirmPayment}
-                    disabled={payStatus === "processing"}
-                    className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center"
-                  >
-                    {payStatus === "processing" ? "正在验证订单..." : "我已完成付款"}
-                  </button>
-                </div>
+                </>
               )}
             </div>
           )}
