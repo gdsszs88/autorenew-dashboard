@@ -83,6 +83,69 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          amount: number
+          created_at: string
+          crypto_amount: number | null
+          crypto_currency: string | null
+          currency: string
+          email: string | null
+          fulfilled_at: string | null
+          id: string
+          months: number
+          notify_data: Json | null
+          paid_at: string | null
+          payment_method: string
+          plan_name: string
+          status: string
+          trade_no: string | null
+          tx_hash: string | null
+          updated_at: string
+          uuid: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          crypto_amount?: number | null
+          crypto_currency?: string | null
+          currency?: string
+          email?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          months: number
+          notify_data?: Json | null
+          paid_at?: string | null
+          payment_method: string
+          plan_name: string
+          status?: string
+          trade_no?: string | null
+          tx_hash?: string | null
+          updated_at?: string
+          uuid: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          crypto_amount?: number | null
+          crypto_currency?: string | null
+          currency?: string
+          email?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          months?: number
+          notify_data?: Json | null
+          paid_at?: string | null
+          payment_method?: string
+          plan_name?: string
+          status?: string
+          trade_no?: string | null
+          tx_hash?: string | null
+          updated_at?: string
+          uuid?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
