@@ -159,6 +159,9 @@ export default function ClientPortal() {
 
   const handleSelectCrypto = (method: string) => {
     setSelectedMethod(method);
+    setCurrentOrderId(null);
+    setPayUrl(null);
+    setError("");
     if (checkoutData) {
       const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
       setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
