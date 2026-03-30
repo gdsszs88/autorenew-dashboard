@@ -151,6 +151,9 @@ export default function ClientPortal() {
   const initiateCheckout = (months: number, price: number, planName: string) => {
     setCheckoutData({ months, price, planName });
     setSelectedMethod("");
+    setCurrentOrderId(null);
+    setPayUrl(null);
+    setError("");
     setTab("checkout");
   };
 
