@@ -325,9 +325,7 @@ export default function ClientPortal() {
 
           {tab === "renew" && config && (
             <div className="animate-fade-in">
-              <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">
-                购买与续费【不按套餐续费的用户链接被锁后果自负，不予解锁】
-              </h2>
+              <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">购买与续费</h2>
               {payStatus === "success" ? (
                 <div className="bg-success/10 border border-success/20 p-8 rounded-2xl text-center">
                   <CheckCircle2 className="w-16 h-16 text-success mx-auto mb-4" />
@@ -346,7 +344,9 @@ export default function ClientPortal() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">🔒</span>
-                      <h3 className="text-xl font-bold text-foreground">独享套餐</h3>
+                      <h3 className="text-xl font-bold text-foreground">
+                        独享套餐【不按套餐续费的用户链接被锁后果自负，不予解锁】
+                      </h3>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">
                       带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户⚠️
@@ -423,7 +423,9 @@ export default function ClientPortal() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">👥</span>
-                      <h3 className="text-xl font-bold text-foreground">共享套餐</h3>
+                      <h3 className="text-xl font-bold text-foreground">
+                        共享套餐【不按套餐续费的用户链接被锁后果自负，不予解锁】
+                      </h3>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">
                       多人共用线路，价格更实惠，适合日常轻度使用。⚠️ 独享用户请勿续费共享，否则链接将被锁定
