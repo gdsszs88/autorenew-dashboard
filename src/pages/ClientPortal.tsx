@@ -162,17 +162,81 @@ export default function ClientPortal() {
     }
   };
 
-  const confirmPayment = () => {
+  const handleCreateOrder = async (method: string) => {
+    if (!checkoutData) return;
     setPayStatus("processing");
-    setTimeout(() => {
-      setPayStatus("success");
-      if (checkoutData) {
-        const newExpiry = new Date(clientData.expiryDate);
-        newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
-        setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+    try {
+      const isCrypto = method === "usdt" || method === "trx";
+      const res = await createOrder({
+        uuid,
+        planName: checkoutData.planName,
+        months: checkoutData.months,
+        amount: checkoutData.price,
+        paymentMethod: method,
+        cryptoAmount: isCrypto ? cryptoPrice : undefined,
+        cryptoCurrency: isCrypto ? method.toUpperCase() : undefined,
+      });
+      if (res?.success) {
+        setCurrentOrderId(res.orderId);
+        if (res.payUrl) setPayUrl(res.payUrl);
+        setPayStatus(null);
+      } else {
+        setPayStatus(null);
+        setError(res?.error || "创建订单失败");
       }
-      setTab("renew");
-    }, 1500);
+    } catch {
+      setPayStatus(null);
+      setError("创建订单失败，请重试");
+    }
+  };
+
+  const handleVerifyCrypto = async () => {
+    if (!currentOrderId) return;
+    setVerifyingCrypto(true);
+    try {
+      const res = await verifyCryptoPayment(currentOrderId);
+      if (res?.success && (res.status === "fulfilled" || res.status === "paid_unfulfilled")) {
+        setPayStatus("success");
+        if (res.status === "fulfilled" && checkoutData) {
+          const newExpiry = new Date(clientData.expiryDate);
+          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+        }
+        setTab("renew");
+      } else {
+        setError(res?.message || "暂未检测到转账，请稍后重试");
+      }
+    } catch {
+      setError("验证失败，请稍后重试");
+    } finally {
+      setVerifyingCrypto(false);
+    }
+  };
+
+  const handleCheckHupiOrder = async () => {
+    if (!currentOrderId) return;
+    setPayStatus("processing");
+    try {
+      const res = await checkOrderStatus(currentOrderId);
+      if (res?.status === "fulfilled") {
+        setPayStatus("success");
+        if (checkoutData) {
+          const newExpiry = new Date(clientData.expiryDate);
+          newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
+          setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
+        }
+        setTab("renew");
+      } else if (res?.status === "paid" || res?.status === "paid_unfulfilled") {
+        setPayStatus("success");
+        setTab("renew");
+      } else {
+        setPayStatus(null);
+        setError("支付尚未完成，请完成支付后再查询");
+      }
+    } catch {
+      setPayStatus(null);
+      setError("查询失败，请稍后重试");
+    }
   };
 
   // Login screen
