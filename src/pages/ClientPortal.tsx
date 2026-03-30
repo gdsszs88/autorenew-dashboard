@@ -254,7 +254,7 @@ export default function ClientPortal() {
           newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
           setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
         }
-        setTab("renew");
+        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
       } else {
         setError(res?.message || "暂未检测到转账，请稍后重试");
       }
