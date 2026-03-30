@@ -10,6 +10,12 @@ interface AdminConfigData {
   priceMonth: number;
   priceQuarter: number;
   priceYear: number;
+  priceExclusiveMonth: number;
+  priceExclusiveQuarter: number;
+  priceExclusiveYear: number;
+  priceSharedMonth: number;
+  priceSharedQuarter: number;
+  priceSharedYear: number;
   hupiWechatAppId: string;
   hupiWechatAppSecret: string;
   hupiAlipayAppId: string;
