@@ -106,19 +106,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get admin config
-    let configQuery = supabase.from("admin_config").select("*").limit(1).single();
-    const { data: configData, error: configError } = await configQuery;
-
-    if (configError || !configData) {
-      return new Response(JSON.stringify({ error: "系统配置未初始化" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { panel_url, panel_user, panel_pass } = configData;
-
     if (action === "test") {
       // Verify admin token
       const configId = verifyToken(token);
@@ -129,7 +116,18 @@ Deno.serve(async (req) => {
         });
       }
 
-      const cookie = await login3xui(panel_url, panel_user, panel_pass);
+      // Use panel params from request body (form values), not DB
+      const testUrl = body.panelUrl || "";
+      const testUser = body.panelUser || "";
+      const testPass = body.panelPass || "";
+
+      if (!testUrl) {
+        return new Response(JSON.stringify({ success: false, error: "请输入面板 URL" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const cookie = await login3xui(testUrl, testUser, testPass);
       if (cookie) {
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
