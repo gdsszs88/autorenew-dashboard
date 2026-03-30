@@ -44,6 +44,8 @@ export default function ClientPortal() {
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [payUrl, setPayUrl] = useState<string | null>(null);
   const [verifyingCrypto, setVerifyingCrypto] = useState(false);
+  const [countdown, setCountdown] = useState(0); // seconds remaining
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -185,6 +187,18 @@ export default function ClientPortal() {
       if (res?.success) {
         setCurrentOrderId(res.orderId);
         if (res.payUrl) setPayUrl(res.payUrl);
+        // Start 20-minute countdown
+        setCountdown(20 * 60);
+        if (countdownRef.current) clearInterval(countdownRef.current);
+        countdownRef.current = setInterval(() => {
+          setCountdown(prev => {
+            if (prev <= 1) {
+              if (countdownRef.current) clearInterval(countdownRef.current);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
         setPayStatus(null);
       } else {
         setPayStatus(null);
@@ -463,7 +477,29 @@ export default function ClientPortal() {
                     <div>
                       {payUrl ? (
                         <div>
-                          <p className="text-muted-foreground mb-4 font-bold">请点击下方链接或扫码完成付款</p>
+                          {/* Countdown */}
+                          {countdown > 0 && (
+                            <div className="mb-4 text-sm font-bold text-warning flex items-center justify-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              订单将在 {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')} 后过期
+                            </div>
+                          )}
+                          {countdown === 0 && currentOrderId && (
+                            <div className="mb-4 text-sm font-bold text-destructive">订单已过期，请重新创建</div>
+                          )}
+
+                          {/* QR Code */}
+                          <p className="text-muted-foreground mb-3 font-bold">电脑端请扫码支付</p>
+                          <div className="w-52 h-52 mx-auto mb-4 bg-background rounded-xl border border-border p-2 flex items-center justify-center">
+                            <img
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}`}
+                              alt="支付二维码"
+                              className="w-full h-full rounded-lg"
+                            />
+                          </div>
+
+                          {/* Mobile link */}
+                          <p className="text-muted-foreground text-sm mb-3">手机端可直接点击下方按钮</p>
                           <a href={payUrl} target="_blank" rel="noopener noreferrer"
                             className="inline-block bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-md mb-6">
                             前往支付页面
@@ -478,8 +514,8 @@ export default function ClientPortal() {
                           <p className="text-muted-foreground mb-6 font-bold">请使用 {selectedMethod === "wechat" ? "微信" : "支付宝"} 扫码付款 ¥{checkoutData.price}</p>
                         </div>
                       )}
-                      <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing"}
-                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
+                      <button onClick={handleCheckHupiOrder} disabled={payStatus === "processing" || countdown === 0}
+                        className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center">
                         {payStatus === "processing" ? "正在查询支付状态..." : "我已完成付款，查询状态"}
                       </button>
                     </div>
