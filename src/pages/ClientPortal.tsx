@@ -743,9 +743,9 @@ export default function ClientPortal() {
                             {config.crypto_address}
                           </div>
                           {error && <p className="text-warning text-sm mb-3">{error}</p>}
-                          <button onClick={handleCryptoVerify} disabled={payStatus === "verifying"}
+                          <button onClick={handleCryptoVerify}
                             className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md">
-                            {payStatus === "verifying" ? "验证中..." : "我已转账，点击验证"}
+                            我已转账，点击验证
                           </button>
                           <p className="text-xs text-muted-foreground mt-3">系统每5秒自动检测链上转账，也可手动点击验证</p>
                         </div>
