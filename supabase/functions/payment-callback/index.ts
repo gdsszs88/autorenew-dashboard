@@ -472,6 +472,15 @@ Deno.serve(async (req) => {
           const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&") + appSecret;
           hupiParams.hash = md5Hex(signStr);
 
+          console.log("Hupi sign debug:", JSON.stringify({
+            paymentMethod,
+            appId,
+            appSecretLen: appSecret.length,
+            appSecretFirst4: appSecret.substring(0, 4),
+            signStr,
+            computedHash: hupiParams.hash,
+          }));
+
           // Call Hupi API
           const hupiUrl = paymentMethod === "wechat"
             ? "https://api.xunhupay.com/payment/do.html"
