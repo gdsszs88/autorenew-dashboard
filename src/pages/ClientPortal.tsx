@@ -277,10 +277,10 @@ export default function ClientPortal() {
           newExpiry.setDate(newExpiry.getDate() + checkoutData.months * 30);
           setClientData({ ...clientData, trafficUsed: 0, expiryDate: newExpiry.getTime() });
         }
-        setTab("renew");
+        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
       } else if (res?.status === "paid" || res?.status === "paid_unfulfilled") {
         setPayStatus("success");
-        setTab("renew");
+        setTimeout(() => { setShowPayModal(false); setTab("renew"); }, 2000);
       } else {
         setPayStatus(null);
         setError("支付尚未完成，请完成支付后再查询");
