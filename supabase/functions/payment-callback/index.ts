@@ -173,8 +173,8 @@ function toRawString(input: string) {
   return Array.from(new TextEncoder().encode(input), (byte) => String.fromCharCode(byte)).join("");
 }
 
-async function hmacMd5(key: string, message: string): Promise<string> {
-  return rstr2hex(rstrHmacMd5(toRawString(key), toRawString(message)));
+function md5Hex(input: string): string {
+  return rstr2hex(rstrMd5(toRawString(input)));
 }
 
 const corsHeaders = {
@@ -313,8 +313,8 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
 // Verify Hupi signature
 async function verifyHupiSign(params: Record<string, string>, appSecret: string): Promise<boolean> {
   const keys = Object.keys(params).filter(k => k !== "hash" && params[k] !== "").sort();
-  const signStr = keys.map(k => `${k}=${params[k]}`).join("&");
-  const expectedHash = await hmacMd5(appSecret, signStr);
+  const signStr = keys.map(k => `${k}=${params[k]}`).join("&") + appSecret;
+  const expectedHash = md5Hex(signStr);
   return expectedHash.toLowerCase() === (params.hash || "").toLowerCase();
 }
 
@@ -469,9 +469,8 @@ Deno.serve(async (req) => {
 
           // Generate signature
           const sortedKeys = Object.keys(hupiParams).filter(k => hupiParams[k] !== "").sort();
-          const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&");
-          const hash = await hmacMd5(appSecret, signStr);
-          hupiParams.hash = hash;
+          const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&") + appSecret;
+          hupiParams.hash = md5Hex(signStr);
 
           // Call Hupi API
           const hupiUrl = paymentMethod === "wechat"
