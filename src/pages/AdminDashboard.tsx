@@ -102,29 +102,37 @@ export default function AdminDashboard() {
     } catch {}
   };
 
-  const handleSave = async () => {
-    setSaveStatus("正在保存...");
+  const setBtnLoading = (key: string, text: string) => {
+    setBtnStatus(prev => ({ ...prev, [key]: text }));
+  };
+  const clearBtn = (key: string, delay = 2000) => {
+    setTimeout(() => setBtnStatus(prev => ({ ...prev, [key]: "" })), delay);
+  };
+
+  const handleSave = async (btnKey: string) => {
+    setBtnLoading(btnKey, "保存中...");
     try {
       await saveAdminConfig(token, config);
-      setSaveStatus("配置已保存并实时生效！");
+      setBtnLoading(btnKey, "✅ 已保存");
     } catch {
-      setSaveStatus("保存失败，请重试");
+      setBtnLoading(btnKey, "❌ 失败");
     }
-    setTimeout(() => setSaveStatus(""), 3000);
+    clearBtn(btnKey);
   };
 
   const handleTest = async () => {
-    setSaveStatus("正在测试连接...");
+    setBtnLoading("test", "连接中...");
     try {
       const res = await testPanelConnection(token, config.panelUrl, config.panelUser, config.panelPass);
-      setSaveStatus(res?.success ? "连接 3x-ui 面板成功！" : `连接失败: ${res?.error || "未知错误"}`);
+      setBtnLoading("test", res?.success ? "✅ 连接成功" : "❌ 连接失败");
     } catch {
-      setSaveStatus("连接测试失败");
+      setBtnLoading("test", "❌ 失败");
     }
-    setTimeout(() => setSaveStatus(""), 5000);
+    clearBtn("test", 3000);
   };
 
   const handleAddPlan = async () => {
+    setBtnLoading("addPlan", "添加中...");
     try {
       const maxSort = plans.length > 0 ? Math.max(...plans.map(p => p.sort_order)) : 0;
       await adminCreatePlan(token, {
@@ -139,35 +147,36 @@ export default function AdminDashboard() {
         enabled: true,
       });
       await loadPlans();
-      setSaveStatus("套餐已添加");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading("addPlan", "✅ 已添加");
     } catch {
-      setSaveStatus("添加失败");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading("addPlan", "❌ 失败");
     }
+    clearBtn("addPlan");
   };
 
   const handleUpdatePlan = async (plan: Plan) => {
+    const key = `save-${plan.id}`;
+    setBtnLoading(key, "保存中...");
     try {
       await adminUpdatePlan(token, plan);
-      setSaveStatus("套餐已更新");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading(key, "✅ 已保存");
     } catch {
-      setSaveStatus("更新失败");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading(key, "❌ 失败");
     }
+    clearBtn(key);
   };
 
   const handleDeletePlan = async (id: string) => {
     if (!confirm("确定删除该套餐？")) return;
+    const key = `del-${id}`;
+    setBtnLoading(key, "删除中...");
     try {
       await adminDeletePlan(token, id);
       setPlans(plans.filter(p => p.id !== id));
-      setSaveStatus("套餐已删除");
-      setTimeout(() => setSaveStatus(""), 2000);
     } catch {
-      setSaveStatus("删除失败");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading(key, "❌ 失败");
+      clearBtn(key);
+    }
     }
   };
 
