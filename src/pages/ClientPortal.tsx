@@ -582,7 +582,6 @@ export default function ClientPortal() {
                     <div className="text-center text-muted-foreground py-12">暂无可用套餐</div>
                   )}
                 </div>
-                </div>
               )}
             </div>
           )}
