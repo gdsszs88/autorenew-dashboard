@@ -58,6 +58,7 @@ interface Order {
   crypto_currency: string | null;
   tx_hash: string | null;
   months: number;
+  remark?: string;
 }
 
 const defaultConfig: AdminConfigData = {
@@ -606,7 +607,7 @@ export default function AdminDashboard() {
                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                 </button>
                               </div>
-                              {order.email && <div className="text-xs text-muted-foreground mt-0.5">{order.email}</div>}
+                              {order.remark && <div className="text-xs text-muted-foreground mt-0.5">📝 {order.remark}</div>}
                             </td>
                             <td className="py-3 px-2">
                               <span className="font-medium">{order.plan_name}</span>

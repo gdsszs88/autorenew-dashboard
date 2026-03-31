@@ -15,6 +15,56 @@ function verifyToken(token: string): string | null {
   }
 }
 
+async function fetchUnsafe(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    const errStr = String(err);
+    if (errStr.includes("certificate") || errStr.includes("SSL") || errStr.includes("TLS")) {
+      const httpUrl = url.replace(/^https:\/\//, "http://");
+      if (httpUrl !== url) return await fetch(httpUrl, init);
+    }
+    throw err;
+  }
+}
+
+async function getUuidRemarkMap(panelUrl: string, panelUser: string, panelPass: string): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  try {
+    const baseUrl = panelUrl.replace(/\/+$/, "");
+    const loginRes = await fetchUnsafe(`${baseUrl}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `username=${encodeURIComponent(panelUser)}&password=${encodeURIComponent(panelPass)}`,
+    });
+    const setCookie = loginRes.headers.get("set-cookie");
+    const cookieMatch = setCookie?.match(/([^=]+=[^;]+)/);
+    const cookie = cookieMatch ? cookieMatch[1] : null;
+    if (!cookie) return map;
+
+    const inboundsRes = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/list`, {
+      method: "GET",
+      headers: { Cookie: cookie, Accept: "application/json" },
+    });
+    const inboundsData = await inboundsRes.json();
+    if (!inboundsData?.success || !inboundsData?.obj) return map;
+
+    for (const inbound of inboundsData.obj) {
+      try {
+        const settings = JSON.parse(inbound.settings || "{}");
+        const clients = settings.clients || [];
+        for (const client of clients) {
+          if (client.id) map[client.id] = client.email || "";
+          if (client.password) map[client.password] = client.email || "";
+        }
+      } catch {}
+    }
+  } catch (err) {
+    console.error("Failed to fetch remark map:", err);
+  }
+  return map;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -57,10 +107,28 @@ Deno.serve(async (req) => {
 
       query = query.range(from, to);
 
-      const { data, error, count } = await query;
+      const [ordersResult, configResult] = await Promise.all([
+        query,
+        supabase.from("admin_config").select("panel_url, panel_user, panel_pass").limit(1).single(),
+      ]);
 
-      if (error) throw error;
-      return new Response(JSON.stringify({ orders: data, total: count }), {
+      if (ordersResult.error) throw ordersResult.error;
+
+      let remarkMap: Record<string, string> = {};
+      if (configResult.data) {
+        remarkMap = await getUuidRemarkMap(
+          configResult.data.panel_url,
+          configResult.data.panel_user,
+          configResult.data.panel_pass
+        );
+      }
+
+      const enrichedOrders = (ordersResult.data || []).map((order: any) => ({
+        ...order,
+        remark: remarkMap[order.uuid] || order.email || "",
+      }));
+
+      return new Response(JSON.stringify({ orders: enrichedOrders, total: ordersResult.count }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
