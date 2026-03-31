@@ -591,6 +591,14 @@ export default function AdminDashboard() {
                             <td className="py-3 px-2 text-xs text-muted-foreground whitespace-nowrap">
                               {new Date(order.created_at).toLocaleString("zh-CN")}
                             </td>
+                            <td className="py-3 px-2">
+                              <button
+                                onClick={() => handleDeleteOrder(order.id)}
+                                className="bg-destructive/10 text-destructive px-2 py-1 rounded-lg text-xs font-bold hover:bg-destructive/20 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
