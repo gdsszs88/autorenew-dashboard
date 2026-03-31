@@ -152,12 +152,14 @@ export default function LandingPage() {
         <header className="lp-header">
           <a href="#" className="lp-logo">
             <div className="lp-logo-icon">IP</div>
-            静态住址服务
+            静态住宅服务
           </a>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", position: "absolute", right: "5%" }}>
+          <div className="lp-header-center">
             <Link to="/portal" className="lp-nav-link">
               充值与续费
             </Link>
+          </div>
+          <div className="lp-header-right">
             <ThemeToggle />
           </div>
         </header>
