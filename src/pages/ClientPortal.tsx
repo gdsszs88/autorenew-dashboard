@@ -163,9 +163,9 @@ export default function ClientPortal() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const extracted = extractUuid(loginInput);
+    const extracted = extractIdentifier(loginInput);
     if (!extracted) {
-      setError("格式错误！请输入正确的 UUID 或完整的节点链接。");
+      setError("请输入 UUID、节点链接或 SOCKS5 用户名/密码。");
       return;
     }
     setUuid(extracted);
