@@ -565,13 +565,16 @@ export default function ClientPortal() {
 
                   {/* 共享分组 */}
                   {dynamicPlans.filter((p) => p.category === "shared").length > 0 && (
-                    <div>
+                    <div className={`${(clientData?.email || "").includes("独享") ? "opacity-50 grayscale pointer-events-none" : ""}`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-lg">👥</span>
                         <h3 className="text-xl font-bold text-foreground">共享套餐</h3>
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
-                        多人共用线路，价格更实惠，适合日常轻度使用。⚠️ 独享用户请勿续费共享，否则链接将被锁定
+                        多人共用线路，价格更实惠，适合日常轻度使用
+                        {(clientData?.email || "").includes("独享") && (
+                          <span className="block text-destructive font-bold mt-1">⚠️ 您是独享用户，无法购买共享套餐</span>
+                        )}
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {dynamicPlans
