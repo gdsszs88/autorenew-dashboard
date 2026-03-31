@@ -123,7 +123,7 @@ function binlMd5(x: number[], len: number) {
 }
 
 function rstr2binl(input: string) {
-  const output = Array<number>(((input.length + 3) >> 2)).fill(0);
+  const output = Array<number>((input.length + 3) >> 2).fill(0);
   for (let i = 0; i < input.length * 8; i += 8) {
     output[i >> 5] |= (input.charCodeAt(i / 8) & 0xff) << (i % 32);
   }
@@ -179,7 +179,8 @@ function md5Hex(input: string): string {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // Helper: fetch with automatic HTTP fallback
@@ -236,7 +237,12 @@ async function findClient(panelUrl: string, cookie: string, identifier: string) 
 
       for (const entry of entries) {
         const candidateKeys = [
-          entry?.id, entry?.email, entry?.user, entry?.username, entry?.pass, entry?.password,
+          entry?.id,
+          entry?.email,
+          entry?.user,
+          entry?.username,
+          entry?.pass,
+          entry?.password,
         ].filter((v): v is string => typeof v === "string" && v.length > 0);
 
         if (candidateKeys.includes(identifier)) {
@@ -244,7 +250,7 @@ async function findClient(panelUrl: string, cookie: string, identifier: string) 
           const isSocks5 = Array.isArray(settings.accounts) && settings.accounts.includes(entry);
           const email = entry.email || inbound.remark || entry.user || entry.username || "";
           // SOCKS5 expiryTime is at inbound level, not account level
-          const expiryTime = isSocks5 ? (inbound.expiryTime || 0) : (entry.expiryTime || 0);
+          const expiryTime = isSocks5 ? inbound.expiryTime || 0 : entry.expiryTime || 0;
           return {
             inboundId: inbound.id,
             email,
@@ -259,12 +265,20 @@ async function findClient(panelUrl: string, cookie: string, identifier: string) 
 }
 
 // Extend client expiry via 3x-ui API
-async function extendExpiry(panelUrl: string, cookie: string, inboundId: number, email: string, currentExpiry: number, months: number, isSocks5: boolean): Promise<boolean> {
+async function extendExpiry(
+  panelUrl: string,
+  cookie: string,
+  inboundId: number,
+  email: string,
+  currentExpiry: number,
+  months: number,
+  isSocks5: boolean,
+): Promise<boolean> {
   const baseUrl = panelUrl.replace(/\/+$/, "");
-  
+
   // Calculate new expiry: if current expiry is 0 or in the past, start from now
   const now = Date.now();
-  const baseTime = (currentExpiry > 0 && currentExpiry > now) ? currentExpiry : now;
+  const baseTime = currentExpiry > 0 && currentExpiry > now ? currentExpiry : now;
   const newExpiry = baseTime + months * 30 * 24 * 60 * 60 * 1000;
 
   if (isSocks5) {
@@ -303,10 +317,13 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
   }
 
   // Standard protocol (VMESS/VLESS/Trojan): reset traffic by email, update client expiryTime
-  const resetRes = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/${inboundId}/resetClientTraffic/${encodeURIComponent(email)}`, {
-    method: "POST",
-    headers: { Cookie: cookie, Accept: "application/json" },
-  });
+  const resetRes = await fetchUnsafe(
+    `${baseUrl}/panel/api/inbounds/${inboundId}/resetClientTraffic/${encodeURIComponent(email)}`,
+    {
+      method: "POST",
+      headers: { Cookie: cookie, Accept: "application/json" },
+    },
+  );
   const resetBody = await resetRes.json();
   console.log("Reset traffic result:", resetBody);
 
@@ -318,9 +335,9 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
 
   const inbound = inboundData.obj;
   const settings = JSON.parse(inbound.settings || "{}");
-  
+
   let found = false;
-  for (const entry of (settings.clients || [])) {
+  for (const entry of settings.clients || []) {
     const entryEmail = entry.email || "";
     if (entryEmail === email) {
       entry.expiryTime = newExpiry;
@@ -356,8 +373,10 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
 
 // Verify Hupi signature
 async function verifyHupiSign(params: Record<string, string>, appSecret: string): Promise<boolean> {
-  const keys = Object.keys(params).filter(k => k !== "hash" && params[k] !== "").sort();
-  const signStr = keys.map(k => `${k}=${params[k]}`).join("&") + appSecret;
+  const keys = Object.keys(params)
+    .filter((k) => k !== "hash" && params[k] !== "")
+    .sort();
+  const signStr = keys.map((k) => `${k}=${params[k]}`).join("&") + appSecret;
   const expectedHash = md5Hex(signStr);
   return expectedHash.toLowerCase() === (params.hash || "").toLowerCase();
 }
@@ -367,10 +386,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   try {
     const url = new URL(req.url);
@@ -411,9 +427,8 @@ Deno.serve(async (req) => {
       if (!config) return new Response("fail", { headers: corsHeaders });
 
       // Determine which app secret to use
-      const appSecret = order.payment_method === "wechat"
-        ? config.hupi_wechat_app_secret
-        : config.hupi_alipay_app_secret;
+      const appSecret =
+        order.payment_method === "wechat" ? config.hupi_wechat_app_secret : config.hupi_alipay_app_secret;
 
       if (appSecret && !(await verifyHupiSign(params, appSecret))) {
         console.error("Invalid Hupi signature");
@@ -421,11 +436,14 @@ Deno.serve(async (req) => {
       }
 
       // Mark order as paid
-      await supabase.from("orders").update({
-        status: "paid",
-        paid_at: new Date().toISOString(),
-        notify_data: params,
-      }).eq("id", order.id);
+      await supabase
+        .from("orders")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          notify_data: params,
+        })
+        .eq("id", order.id);
 
       // Extend expiry via 3x-ui
       let finalStatus = "paid";
@@ -435,9 +453,20 @@ Deno.serve(async (req) => {
         const client = await findClient(config.panel_url, cookie, order.uuid);
         if (client) {
           clientRemark = client.email || "";
-          const success = await extendExpiry(config.panel_url, cookie, client.inboundId, client.email, client.expiryTime, order.months, client.isSocks5);
+          const success = await extendExpiry(
+            config.panel_url,
+            cookie,
+            client.inboundId,
+            client.email,
+            client.expiryTime,
+            order.months,
+            client.isSocks5,
+          );
           if (success) {
-            await supabase.from("orders").update({ status: "fulfilled", fulfilled_at: new Date().toISOString() }).eq("id", order.id);
+            await supabase
+              .from("orders")
+              .update({ status: "fulfilled", fulfilled_at: new Date().toISOString() })
+              .eq("id", order.id);
             finalStatus = "fulfilled";
           } else {
             await supabase.from("orders").update({ status: "paid_unfulfilled" }).eq("id", order.id);
@@ -452,7 +481,7 @@ Deno.serve(async (req) => {
           await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
-              "Authorization": `Bearer ${config.resend_api_key}`,
+              Authorization: `Bearer ${config.resend_api_key}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -465,13 +494,13 @@ Deno.serve(async (req) => {
                   <table style="width:100%;border-collapse:collapse;margin-top:16px;">
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">订单号</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">${order.trade_no || order.id}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">用户UUID</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.uuid}</td></tr>
-                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">用户备注</td><td style="padding:8px;border-bottom:1px solid #eee;">${clientRemark || '未找到'}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">用户备注</td><td style="padding:8px;border-bottom:1px solid #eee;">${clientRemark || "未找到"}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">套餐</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.plan_name}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">金额</td><td style="padding:8px;border-bottom:1px solid #eee;">¥${order.amount}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">时长</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.months} 个月</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">支付方式</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.payment_method}</td></tr>
-                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">续费状态</td><td style="padding:8px;border-bottom:1px solid #eee;">${finalStatus === 'fulfilled' ? '✅ 已续费' : '⚠️ 待处理'}</td></tr>
-                    <tr><td style="padding:8px;color:#666;">时间</td><td style="padding:8px;">${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">续费状态</td><td style="padding:8px;border-bottom:1px solid #eee;">${finalStatus === "fulfilled" ? "✅ 已续费" : "⚠️ 待处理"}</td></tr>
+                    <tr><td style="padding:8px;color:#666;">时间</td><td style="padding:8px;">${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}</td></tr>
                   </table>
                 </div>
               `,
@@ -496,27 +525,33 @@ Deno.serve(async (req) => {
 
         if (!uuid || !planName || !months || !amount || !paymentMethod) {
           return new Response(JSON.stringify({ error: "缺少必要参数" }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
         const tradeNo = `ORD${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-        const { data: order, error } = await supabase.from("orders").insert({
-          uuid,
-          plan_name: planName,
-          months,
-          amount,
-          payment_method: paymentMethod,
-          trade_no: tradeNo,
-          crypto_amount: cryptoAmount || null,
-          crypto_currency: cryptoCurrency || null,
-          status: "pending",
-        }).select().single();
+        const { data: order, error } = await supabase
+          .from("orders")
+          .insert({
+            uuid,
+            plan_name: planName,
+            months,
+            amount,
+            payment_method: paymentMethod,
+            trade_no: tradeNo,
+            crypto_amount: cryptoAmount || null,
+            crypto_currency: cryptoCurrency || null,
+            status: "pending",
+          })
+          .select()
+          .single();
 
         if (error) {
           return new Response(JSON.stringify({ error: "创建订单失败" }), {
-            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
@@ -525,7 +560,8 @@ Deno.serve(async (req) => {
           const { data: config } = await supabase.from("admin_config").select("*").limit(1).single();
           if (!config) {
             return new Response(JSON.stringify({ error: "系统配置未初始化" }), {
-              status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
 
@@ -534,7 +570,8 @@ Deno.serve(async (req) => {
 
           if (!appId || !appSecret) {
             return new Response(JSON.stringify({ error: "支付配置未完成" }), {
-              status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
 
@@ -547,30 +584,36 @@ Deno.serve(async (req) => {
             appid: appId,
             trade_order_id: tradeNo,
             total_fee: String(amount),
-            title: `节点续费 - ${planName}`,
+            title: `续费 - ${planName}`,
             time: String(Math.floor(Date.now() / 1000)),
             notify_url: notifyUrl,
             nonce_str: Math.random().toString(36).substring(2, 15),
           };
 
           // Generate signature
-          const sortedKeys = Object.keys(hupiParams).filter(k => hupiParams[k] !== "").sort();
-          const signStr = sortedKeys.map(k => `${k}=${hupiParams[k]}`).join("&") + appSecret;
+          const sortedKeys = Object.keys(hupiParams)
+            .filter((k) => hupiParams[k] !== "")
+            .sort();
+          const signStr = sortedKeys.map((k) => `${k}=${hupiParams[k]}`).join("&") + appSecret;
           hupiParams.hash = md5Hex(signStr);
 
-          console.log("Hupi sign debug:", JSON.stringify({
-            paymentMethod,
-            appId,
-            appSecretLen: appSecret.length,
-            appSecretFirst4: appSecret.substring(0, 4),
-            signStr,
-            computedHash: hupiParams.hash,
-          }));
+          console.log(
+            "Hupi sign debug:",
+            JSON.stringify({
+              paymentMethod,
+              appId,
+              appSecretLen: appSecret.length,
+              appSecretFirst4: appSecret.substring(0, 4),
+              signStr,
+              computedHash: hupiParams.hash,
+            }),
+          );
 
           // Call Hupi API
-          const hupiUrl = paymentMethod === "wechat"
-            ? "https://api.xunhupay.com/payment/do.html"
-            : "https://api.xunhupay.com/payment/do.html";
+          const hupiUrl =
+            paymentMethod === "wechat"
+              ? "https://api.xunhupay.com/payment/do.html"
+              : "https://api.xunhupay.com/payment/do.html";
 
           try {
             const hupiRes = await fetch(hupiUrl, {
@@ -582,48 +625,60 @@ Deno.serve(async (req) => {
             console.log("Hupi create payment response:", hupiData);
 
             if (hupiData.openid || hupiData.url || hupiData.url_qrcode) {
-              return new Response(JSON.stringify({
-                success: true,
-                orderId: order.id,
-                tradeNo,
-                payUrl: hupiData.url || hupiData.url_qrcode || "",
-                qrCode: hupiData.url_qrcode || "",
-              }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              });
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  orderId: order.id,
+                  tradeNo,
+                  payUrl: hupiData.url || hupiData.url_qrcode || "",
+                  qrCode: hupiData.url_qrcode || "",
+                }),
+                {
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                },
+              );
             } else {
-              return new Response(JSON.stringify({
-                success: false,
-                error: hupiData.errmsg || hupiData.errcode || "支付创建失败",
-                orderId: order.id,
-                tradeNo,
-              }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              });
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: hupiData.errmsg || hupiData.errcode || "支付创建失败",
+                  orderId: order.id,
+                  tradeNo,
+                }),
+                {
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                },
+              );
             }
           } catch (err) {
             console.error("Hupi API error:", err);
-            return new Response(JSON.stringify({
-              success: false,
-              error: "虎皮椒接口调用失败",
-              orderId: order.id,
-              tradeNo,
-            }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "虎皮椒接口调用失败",
+                orderId: order.id,
+                tradeNo,
+              }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              },
+            );
           }
         }
 
         // For crypto payments, return order info for manual flow
-        return new Response(JSON.stringify({
-          success: true,
-          orderId: order.id,
-          tradeNo,
-          cryptoAmount,
-          cryptoCurrency,
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            orderId: order.id,
+            tradeNo,
+            cryptoAmount,
+            cryptoCurrency,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
 
       // === CHECK ORDER STATUS ===
@@ -637,12 +692,14 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ error: "Unknown request" }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("Payment callback error:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
