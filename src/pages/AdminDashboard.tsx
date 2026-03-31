@@ -91,6 +91,7 @@ const defaultConfig: AdminConfigData = {
   tawkId: "",
   qqQrcodeUrl: "",
   telegramLink: "",
+  videoEmbed: "",
 };
 
 export default function AdminDashboard() {
