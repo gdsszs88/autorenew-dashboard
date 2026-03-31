@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, token, page, pageSize, search, statusFilter, orderId } = await req.json();
+    const { action, token, page, pageSize, search, statusFilter, orderId, orderIds } = await req.json();
 
     const configId = verifyToken(token);
     if (!configId) {
