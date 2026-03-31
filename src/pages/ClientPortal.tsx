@@ -92,6 +92,8 @@ export default function ClientPortal() {
   const [checkoutData, setCheckoutData] = useState<{ months: number; price: number; planName: string } | null>(null);
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
+  const [exchangeRates, setExchangeRates] = useState<{ usdtCny: number; trxCny: number } | null>(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
   const [qrStatus, setQrStatus] = useState("");
   const [orderId, setOrderId] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
