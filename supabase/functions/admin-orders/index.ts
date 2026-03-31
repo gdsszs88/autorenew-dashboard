@@ -66,8 +66,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === "delete") {
-      const { orderId } = await req.json().catch(() => ({ orderId: null }));
-      const id = orderId || (await req.json().catch(() => ({}))).orderId;
       if (!orderId) {
         return new Response(JSON.stringify({ error: "缺少 orderId" }), {
           status: 400,
