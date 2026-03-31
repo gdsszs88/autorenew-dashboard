@@ -98,6 +98,7 @@ export default function ClientPortal() {
   const [payUrl, setPayUrl] = useState("");
   const [orderCreating, setOrderCreating] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [videoEmbed, setVideoEmbed] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
