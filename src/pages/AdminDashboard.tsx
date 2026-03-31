@@ -30,6 +30,7 @@ interface AdminConfigData {
   tawkId: string;
   qqQrcodeUrl: string;
   telegramLink: string;
+  videoEmbed: string;
 }
 
 interface Plan {
