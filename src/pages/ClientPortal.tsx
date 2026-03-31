@@ -420,12 +420,23 @@ export default function ClientPortal() {
           {tab === "dashboard" && (
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">当前运行状态</h2>
-              <div className="bg-client-primary/10 border border-client-primary/20 text-client-primary px-4 py-3 rounded-xl mb-6 flex items-center shadow-sm">
-                <ShieldCheck className="w-5 h-5 mr-2" />
-                <span className="font-medium text-sm">当前登录节点 UUID: </span>
-                <span className="ml-2 font-mono text-xs bg-background px-2 py-1 rounded border border-border truncate">
-                  {uuid}
-                </span>
+              <div className="bg-client-primary/10 border border-client-primary/20 text-client-primary px-4 py-3 rounded-xl mb-6 shadow-sm space-y-1">
+                <div className="flex items-center">
+                  <ShieldCheck className="w-5 h-5 mr-2" />
+                  <span className="font-medium text-sm">当前登录节点 UUID: </span>
+                  <span className="ml-2 font-mono text-xs bg-background px-2 py-1 rounded border border-border truncate">
+                    {uuid}
+                  </span>
+                </div>
+                {clientData.email && (
+                  <div className="flex items-center pl-7">
+                    <User className="w-4 h-4 mr-2 opacity-70" />
+                    <span className="font-medium text-sm">备注名称: </span>
+                    <span className="ml-2 text-sm font-mono bg-background px-2 py-1 rounded border border-border">
+                      {clientData.email}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-client-primary/5 p-6 rounded-2xl border border-client-primary/20">
