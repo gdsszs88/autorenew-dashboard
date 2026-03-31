@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings, Server, QrCode, Bitcoin, CheckCircle2, Plus, Trash2, Package, ClipboardList, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan, adminGetOrders, adminDeleteOrder } from "@/lib/api";
+import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan, adminGetOrders, adminDeleteOrder, adminBatchDeleteOrders } from "@/lib/api";
 
 interface AdminConfigData {
   panelUrl: string;
@@ -97,6 +97,7 @@ export default function AdminDashboard() {
   const [ordersSearch, setOrdersSearch] = useState("");
   const [ordersStatus, setOrdersStatus] = useState("all");
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const token = sessionStorage.getItem("admin_token") || "";
 
@@ -139,15 +140,43 @@ export default function AdminDashboard() {
 
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm("确定删除该订单？")) return;
-    const key = `del-order-${orderId}`;
-    setBtnStatus(prev => ({ ...prev, [key]: "删除中..." }));
     try {
       await adminDeleteOrder(token, orderId);
       setOrders(orders.filter(o => o.id !== orderId));
       setOrdersTotal(prev => prev - 1);
+      setSelectedOrders(prev => { const s = new Set(prev); s.delete(orderId); return s; });
+    } catch {}
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedOrders.size === 0) return;
+    if (!confirm(`确定删除选中的 ${selectedOrders.size} 条订单？`)) return;
+    setBtnStatus(prev => ({ ...prev, batchDel: "删除中..." }));
+    try {
+      await adminBatchDeleteOrders(token, Array.from(selectedOrders));
+      setOrders(orders.filter(o => !selectedOrders.has(o.id)));
+      setOrdersTotal(prev => prev - selectedOrders.size);
+      setSelectedOrders(new Set());
+      setBtnStatus(prev => ({ ...prev, batchDel: "✅ 已删除" }));
     } catch {
-      setBtnStatus(prev => ({ ...prev, [key]: "❌ 失败" }));
-      setTimeout(() => setBtnStatus(prev => ({ ...prev, [key]: "" })), 2000);
+      setBtnStatus(prev => ({ ...prev, batchDel: "❌ 失败" }));
+    }
+    setTimeout(() => setBtnStatus(prev => ({ ...prev, batchDel: "" })), 2000);
+  };
+
+  const toggleSelectOrder = (id: string) => {
+    setSelectedOrders(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrders.size === orders.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(orders.map(o => o.id)));
     }
   };
 
@@ -528,6 +557,15 @@ export default function AdminDashboard() {
                 >
                   搜索
                 </button>
+                {selectedOrders.size > 0 && (
+                  <button
+                    onClick={handleBatchDelete}
+                    disabled={!!btnStatus["batchDel"]}
+                    className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors text-sm disabled:opacity-70 flex items-center gap-1"
+                  >
+                    <Trash2 className="w-4 h-4" /> {btnStatus["batchDel"] || `删除 (${selectedOrders.size})`}
+                  </button>
+                )}
               </div>
 
               {ordersLoading ? (
@@ -540,6 +578,10 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-border text-left text-muted-foreground">
+                          <th className="py-3 px-2 w-8">
+                            <input type="checkbox" checked={orders.length > 0 && selectedOrders.size === orders.length}
+                              onChange={toggleSelectAll} className="w-4 h-4 rounded cursor-pointer" />
+                          </th>
                           <th className="py-3 px-2 font-semibold">UUID</th>
                           <th className="py-3 px-2 font-semibold">套餐</th>
                           <th className="py-3 px-2 font-semibold">金额</th>
@@ -551,7 +593,11 @@ export default function AdminDashboard() {
                       </thead>
                       <tbody>
                         {orders.map(order => (
-                          <tr key={order.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                          <tr key={order.id} className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${selectedOrders.has(order.id) ? "bg-accent/5" : ""}`}>
+                            <td className="py-3 px-2">
+                              <input type="checkbox" checked={selectedOrders.has(order.id)}
+                                onChange={() => toggleSelectOrder(order.id)} className="w-4 h-4 rounded cursor-pointer" />
+                            </td>
                             <td className="py-3 px-2 font-mono text-xs max-w-[140px] truncate" title={order.uuid}>{order.uuid.slice(0, 8)}...</td>
                             <td className="py-3 px-2">
                               <span className="font-medium">{order.plan_name}</span>
