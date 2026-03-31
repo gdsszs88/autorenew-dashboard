@@ -378,63 +378,70 @@ export default function ClientPortal() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-muted p-4 relative">
         <Link to="/" className="absolute top-4 left-4 text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
         <div className="absolute top-4 right-4"><ThemeToggle /></div>
-        <div className="max-w-md w-full bg-card rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-client-primary p-8 text-center">
-            <User className="w-16 h-16 text-client-primary-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-client-primary-foreground mb-2">节点自助服务中心</h1>
-            <p className="text-client-primary-foreground/80 text-sm">支持直接粘贴链接 或 扫码识别</p>
+        <div className={`flex items-stretch gap-6 w-full ${videoHtml ? 'max-w-4xl flex-col md:flex-row' : 'max-w-md flex-col'}`}>
+          {/* Login card */}
+          <div className={`bg-card rounded-2xl shadow-xl overflow-hidden ${videoHtml ? 'md:w-1/2 w-full' : 'w-full'}`}>
+            <div className="bg-client-primary p-8 text-center">
+              <User className="w-16 h-16 text-client-primary-foreground mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-client-primary-foreground mb-2">节点自助服务中心</h1>
+              <p className="text-client-primary-foreground/80 text-sm">支持直接粘贴链接 或 扫码识别</p>
+            </div>
+            <div className="p-8">
+              <form onSubmit={handleLogin}>
+                <div className="relative mb-6">
+                  <textarea
+                    value={loginInput}
+                    onChange={(e) => setLoginInput(e.target.value)}
+                    onPaste={handlePaste}
+                    placeholder={
+                      "例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n支持 SOCKS5 用户名或密码\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"
+                    }
+                    className="w-full px-4 py-3 rounded-lg border border-input focus:ring-2 focus:ring-client-primary focus:border-transparent outline-none min-h-[120px] resize-none pb-12 bg-background text-foreground"
+                    required
+                  />
+                  <div className="absolute bottom-3 right-3 flex items-center space-x-3">
+                    {qrStatus && <span className="text-xs font-bold text-client-primary animate-pulse">{qrStatus}</span>}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center shadow-sm border border-border hover:opacity-90"
+                    >
+                      <Upload className="w-4 h-4 mr-1.5" />
+                      扫码/传图
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) processImageFile(f);
+                        e.target.value = "";
+                      }}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+                {error && <p className="text-destructive text-sm mb-4">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-client-primary hover:opacity-90 text-client-primary-foreground font-bold py-3 rounded-lg transition-colors shadow-lg"
+                >
+                  {loading ? "智能解析并登录..." : "解析登录"}
+                </button>
+              </form>
+            </div>
           </div>
+          {/* Video panel */}
           {videoHtml && (
-            <div className="px-6 pt-6">
-              <div dangerouslySetInnerHTML={{ __html: videoHtml }} className="rounded-xl overflow-hidden" />
+            <div className="md:w-1/2 w-full flex items-center">
+              <div className="w-full bg-card rounded-2xl shadow-xl overflow-hidden p-6">
+                <h2 className="text-lg font-bold text-foreground mb-4 text-center">📺 使用教程</h2>
+                <div dangerouslySetInnerHTML={{ __html: videoHtml }} className="rounded-xl overflow-hidden" />
+              </div>
             </div>
           )}
-          <div className="p-8">
-            <form onSubmit={handleLogin}>
-              <div className="relative mb-6">
-                <textarea
-                  value={loginInput}
-                  onChange={(e) => setLoginInput(e.target.value)}
-                  onPaste={handlePaste}
-                  placeholder={
-                    "例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n支持 SOCKS5 用户名或密码\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"
-                  }
-                  className="w-full px-4 py-3 rounded-lg border border-input focus:ring-2 focus:ring-client-primary focus:border-transparent outline-none min-h-[120px] resize-none pb-12 bg-background text-foreground"
-                  required
-                />
-                <div className="absolute bottom-3 right-3 flex items-center space-x-3">
-                  {qrStatus && <span className="text-xs font-bold text-client-primary animate-pulse">{qrStatus}</span>}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center shadow-sm border border-border hover:opacity-90"
-                  >
-                    <Upload className="w-4 h-4 mr-1.5" />
-                    扫码/传图
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) processImageFile(f);
-                      e.target.value = "";
-                    }}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
-              </div>
-              {error && <p className="text-destructive text-sm mb-4">{error}</p>}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-client-primary hover:opacity-90 text-client-primary-foreground font-bold py-3 rounded-lg transition-colors shadow-lg"
-              >
-                {loading ? "智能解析并登录..." : "解析登录"}
-              </button>
-            </form>
-          </div>
         </div>
       </div>
     );
