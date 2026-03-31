@@ -70,6 +70,7 @@ export default function AdminDashboard() {
   const [config, setConfig] = useState<AdminConfigData>(defaultConfig);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [saveStatus, setSaveStatus] = useState("");
+  const [btnStatus, setBtnStatus] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const token = sessionStorage.getItem("admin_token") || "";
@@ -101,29 +102,37 @@ export default function AdminDashboard() {
     } catch {}
   };
 
-  const handleSave = async () => {
-    setSaveStatus("正在保存...");
+  const setBtnLoading = (key: string, text: string) => {
+    setBtnStatus(prev => ({ ...prev, [key]: text }));
+  };
+  const clearBtn = (key: string, delay = 2000) => {
+    setTimeout(() => setBtnStatus(prev => ({ ...prev, [key]: "" })), delay);
+  };
+
+  const handleSave = async (btnKey: string) => {
+    setBtnLoading(btnKey, "保存中...");
     try {
       await saveAdminConfig(token, config);
-      setSaveStatus("配置已保存并实时生效！");
+      setBtnLoading(btnKey, "✅ 已保存");
     } catch {
-      setSaveStatus("保存失败，请重试");
+      setBtnLoading(btnKey, "❌ 失败");
     }
-    setTimeout(() => setSaveStatus(""), 3000);
+    clearBtn(btnKey);
   };
 
   const handleTest = async () => {
-    setSaveStatus("正在测试连接...");
+    setBtnLoading("test", "连接中...");
     try {
       const res = await testPanelConnection(token, config.panelUrl, config.panelUser, config.panelPass);
-      setSaveStatus(res?.success ? "连接 3x-ui 面板成功！" : `连接失败: ${res?.error || "未知错误"}`);
+      setBtnLoading("test", res?.success ? "✅ 连接成功" : "❌ 连接失败");
     } catch {
-      setSaveStatus("连接测试失败");
+      setBtnLoading("test", "❌ 失败");
     }
-    setTimeout(() => setSaveStatus(""), 5000);
+    clearBtn("test", 3000);
   };
 
   const handleAddPlan = async () => {
+    setBtnLoading("addPlan", "添加中...");
     try {
       const maxSort = plans.length > 0 ? Math.max(...plans.map(p => p.sort_order)) : 0;
       await adminCreatePlan(token, {
@@ -138,35 +147,35 @@ export default function AdminDashboard() {
         enabled: true,
       });
       await loadPlans();
-      setSaveStatus("套餐已添加");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading("addPlan", "✅ 已添加");
     } catch {
-      setSaveStatus("添加失败");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading("addPlan", "❌ 失败");
     }
+    clearBtn("addPlan");
   };
 
   const handleUpdatePlan = async (plan: Plan) => {
+    const key = `save-${plan.id}`;
+    setBtnLoading(key, "保存中...");
     try {
       await adminUpdatePlan(token, plan);
-      setSaveStatus("套餐已更新");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading(key, "✅ 已保存");
     } catch {
-      setSaveStatus("更新失败");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading(key, "❌ 失败");
     }
+    clearBtn(key);
   };
 
   const handleDeletePlan = async (id: string) => {
     if (!confirm("确定删除该套餐？")) return;
+    const key = `del-${id}`;
+    setBtnLoading(key, "删除中...");
     try {
       await adminDeletePlan(token, id);
       setPlans(plans.filter(p => p.id !== id));
-      setSaveStatus("套餐已删除");
-      setTimeout(() => setSaveStatus(""), 2000);
     } catch {
-      setSaveStatus("删除失败");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setBtnLoading(key, "❌ 失败");
+      clearBtn(key);
     }
   };
 
@@ -197,12 +206,6 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {saveStatus && (
-          <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-xl flex items-center shadow-sm">
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-            {saveStatus}
-          </div>
-        )}
 
         {/* 商品管理 - Full width */}
         <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
@@ -210,9 +213,9 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-bold flex items-center text-client-primary">
               <Package className="w-5 h-5 mr-2" /> 商品管理
             </h2>
-            <button onClick={handleAddPlan}
-              className="bg-client-primary text-client-primary-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors flex items-center text-sm shadow-md">
-              <Plus className="w-4 h-4 mr-1" /> 添加套餐
+            <button onClick={handleAddPlan} disabled={!!btnStatus["addPlan"]}
+              className="bg-client-primary text-client-primary-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors flex items-center text-sm shadow-md disabled:opacity-70">
+              <Plus className="w-4 h-4 mr-1" /> {btnStatus["addPlan"] || "添加套餐"}
             </button>
           </div>
           <p className="text-xs text-muted-foreground mb-4">💡 修改后请点击每行右侧的"保存"按钮。添加/删除套餐不影响现有支付接口。</p>
@@ -272,9 +275,9 @@ export default function AdminDashboard() {
                     </label>
                   </div>
                   <div className="md:col-span-2 flex items-end gap-2">
-                    <button onClick={() => handleUpdatePlan(plan)}
-                      className="bg-success text-success-foreground px-3 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-colors">
-                      保存
+                    <button onClick={() => handleUpdatePlan(plan)} disabled={!!btnStatus[`save-${plan.id}`]}
+                      className="bg-success text-success-foreground px-3 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-colors disabled:opacity-70 min-w-[60px]">
+                      {btnStatus[`save-${plan.id}`] || "保存"}
                     </button>
                     <button onClick={() => handleDeletePlan(plan.id)}
                       className="bg-destructive/10 text-destructive px-3 py-2 rounded-lg text-xs font-bold hover:bg-destructive/20 transition-colors">
@@ -313,11 +316,13 @@ export default function AdminDashboard() {
                   className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background" />
               </div>
               <div className="flex space-x-3 pt-4">
-                <button onClick={handleTest} className="flex-1 bg-secondary text-secondary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors border border-border">
-                  测试连接
+                <button onClick={handleTest} disabled={!!btnStatus["test"]}
+                  className="flex-1 bg-secondary text-secondary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors border border-border disabled:opacity-70">
+                  {btnStatus["test"] || "测试连接"}
                 </button>
-                <button onClick={handleSave} className="flex-1 bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md">
-                  保存配置
+                <button onClick={() => handleSave("panel")} disabled={!!btnStatus["panel"]}
+                  className="flex-1 bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md disabled:opacity-70">
+                  {btnStatus["panel"] || "保存配置"}
                 </button>
               </div>
             </div>
@@ -369,8 +374,9 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
-              <button onClick={handleSave} className="w-full bg-warning text-warning-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
-                <CheckCircle2 className="w-5 h-5 mr-2" /> 保存支付配置
+              <button onClick={() => handleSave("payment")} disabled={!!btnStatus["payment"]}
+                className="w-full bg-warning text-warning-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center disabled:opacity-70">
+                <CheckCircle2 className="w-5 h-5 mr-2" /> {btnStatus["payment"] || "保存支付配置"}
               </button>
             </div>
           </div>
@@ -406,8 +412,9 @@ export default function AdminDashboard() {
                 客户使用虚拟货币付款时，系统会自动在原价基础上加上 <b>0.001 - 0.0019</b> 的随机尾数以唯一标识订单。
               </div>
             </div>
-            <button onClick={handleSave} className="w-full bg-accent text-accent-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center mt-4">
-              <CheckCircle2 className="w-5 h-5 mr-2" /> 保存加密货币配置
+            <button onClick={() => handleSave("crypto")} disabled={!!btnStatus["crypto"]}
+              className="w-full bg-accent text-accent-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center mt-4 disabled:opacity-70">
+              <CheckCircle2 className="w-5 h-5 mr-2" /> {btnStatus["crypto"] || "保存加密货币配置"}
             </button>
           </div>
         </div>
