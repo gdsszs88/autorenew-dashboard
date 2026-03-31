@@ -87,6 +87,9 @@ const defaultConfig: AdminConfigData = {
   cryptoKey: "",
   cryptoUsdt: true,
   cryptoTrx: true,
+  tawkId: "",
+  qqQrcodeUrl: "",
+  telegramLink: "",
 };
 
 export default function AdminDashboard() {
