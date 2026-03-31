@@ -36,7 +36,6 @@ interface ClientData {
   expiryDate: number;
   trafficUsed: number;
   trafficTotal: number;
-  email: string;
 }
 
 interface PlanItem {
@@ -65,7 +64,6 @@ export default function ClientPortal() {
     expiryDate: Date.now() + 5 * 86400000,
     trafficUsed: 0,
     trafficTotal: 100,
-    email: "",
   });
   const [dynamicPlans, setDynamicPlans] = useState<PlanItem[]>([]);
   const [checkoutData, setCheckoutData] = useState<{ months: number; price: number; planName: string } | null>(null);
@@ -174,7 +172,6 @@ export default function ClientPortal() {
           expiryDate: res.expiryDate || Date.now() + 30 * 86400000,
           trafficUsed: res.trafficUsed ?? 0,
           trafficTotal: res.trafficTotal ?? 100,
-          email: res.email || "",
         });
         setLogged(true);
       } else {
@@ -190,8 +187,14 @@ export default function ClientPortal() {
   const getDaysLeft = () => Math.max(0, Math.ceil((clientData.expiryDate - Date.now()) / 86400000));
 
   const cleanupPolling = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
   };
 
   useEffect(() => () => cleanupPolling(), []);
@@ -219,8 +222,12 @@ export default function ClientPortal() {
   const startPolling = (oid: string, isCrypto: boolean) => {
     setCountdown(1200); // 20 minutes
     countdownRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) { cleanupPolling(); setPayStatus("expired"); return 0; }
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          cleanupPolling();
+          setPayStatus("expired");
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -319,7 +326,10 @@ export default function ClientPortal() {
     }
   };
 
-  const formatCountdown = (s: number) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+  const formatCountdown = (s: number) =>
+    `${Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   // Login screen
   if (!logged) {
@@ -420,23 +430,12 @@ export default function ClientPortal() {
           {tab === "dashboard" && (
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">当前运行状态</h2>
-              <div className="bg-client-primary/10 border border-client-primary/20 text-client-primary px-4 py-3 rounded-xl mb-6 shadow-sm space-y-1">
-                <div className="flex items-center">
-                  <ShieldCheck className="w-5 h-5 mr-2" />
-                  <span className="font-medium text-sm">当前登录节点 UUID: </span>
-                  <span className="ml-2 font-mono text-xs bg-background px-2 py-1 rounded border border-border truncate">
-                    {uuid}
-                  </span>
-                </div>
-                {clientData.email && (
-                  <div className="flex items-center pl-7">
-                    <User className="w-4 h-4 mr-2 opacity-70" />
-                    <span className="font-medium text-sm">备注名称: </span>
-                    <span className="ml-2 text-sm font-mono bg-background px-2 py-1 rounded border border-border">
-                      {clientData.email}
-                    </span>
-                  </div>
-                )}
+              <div className="bg-client-primary/10 border border-client-primary/20 text-client-primary px-4 py-3 rounded-xl mb-6 flex items-center shadow-sm">
+                <ShieldCheck className="w-5 h-5 mr-2" />
+                <span className="font-medium text-sm">当前登录节点 UUID: </span>
+                <span className="ml-2 font-mono text-xs bg-background px-2 py-1 rounded border border-border truncate">
+                  {uuid}
+                </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-client-primary/5 p-6 rounded-2xl border border-client-primary/20">
@@ -483,137 +482,124 @@ export default function ClientPortal() {
                 </div>
               ) : (
                 <div className="space-y-10">
-                  {(() => {
-                    // Detect user type from email remark
-                    const email = clientData.email || "";
-                    const isExclusive = email.includes("独享");
-                    const isShared = email.includes("共享");
-                    const userType: "exclusive" | "shared" | "all" = isExclusive ? "exclusive" : isShared ? "shared" : "all";
-
-                    const exclusivePlans = dynamicPlans.filter(p => p.category === "exclusive");
-                    const sharedPlans = dynamicPlans.filter(p => p.category === "shared");
-                    const exclusiveDisabled = userType === "shared";
-                    const sharedDisabled = userType === "exclusive";
-
-                    return (
-                      <>
-                        {/* 独享分组 */}
-                        {exclusivePlans.length > 0 && (
-                          <div className={exclusiveDisabled ? "opacity-50 pointer-events-none select-none" : ""}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-lg">🔒</span>
-                              <h3 className="text-xl font-bold text-foreground">
-                                独享套餐{exclusiveDisabled ? "（您是共享用户，无法购买）" : "【不按套餐续费的用户链接被锁后果自负，不予解锁】"}
-                              </h3>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-4">
-                              带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户
-                              {!exclusiveDisabled && "⚠️ 共享用户请勿续费独享，否则链接将被锁定"}
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                              {exclusivePlans.map((plan) => (
-                                <div
-                                  key={plan.id}
-                                  className={`rounded-2xl p-6 relative transition-colors ${exclusiveDisabled ? "bg-muted border border-border grayscale" : plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-client-primary bg-card"}`}
-                                >
-                                  {plan.featured && !exclusiveDisabled && (
-                                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
-                                      推荐
-                                    </div>
-                                  )}
-                                  <h3 className={`text-lg font-bold mb-2 ${plan.featured && !exclusiveDisabled ? "" : "text-muted-foreground"}`}>
-                                    {plan.title}
-                                  </h3>
-                                  <div className={`text-4xl font-extrabold mb-3 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`}>
-                                    ¥{plan.price}
-                                    <span className="text-base font-normal text-muted-foreground">/{plan.duration_days}天</span>
-                                  </div>
-                                  <ul className="text-sm text-muted-foreground space-y-2 mb-6">
-                                    <li className="flex items-center">
-                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`} />{" "}
-                                      {plan.description || "独享带宽，速度有保障"}
-                                    </li>
-                                    <li className="flex items-center">
-                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`} /> 增加 {plan.duration_days} 天有效期
-                                    </li>
-                                    <li className="flex items-center">
-                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`} /> 立即重置流量
-                                    </li>
-                                  </ul>
-                                  <button
-                                    disabled={exclusiveDisabled}
-                                    onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
-                                    className={`w-full font-bold py-3 rounded-xl transition-colors ${exclusiveDisabled ? "bg-muted text-muted-foreground cursor-not-allowed" : plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}
-                                  >
-                                    {exclusiveDisabled ? "不可购买" : "立即购买"}
-                                  </button>
+                  {/* 独享分组 */}
+                  {dynamicPlans.filter((p) => p.category === "exclusive").length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">🔒</span>
+                        <h3 className="text-xl font-bold text-foreground">独享套餐</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户⚠️
+                        共享用户请勿续费独享，否则链接将被锁定
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        {dynamicPlans
+                          .filter((p) => p.category === "exclusive")
+                          .map((plan) => (
+                            <div
+                              key={plan.id}
+                              className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-client-primary bg-card"}`}
+                            >
+                              {plan.featured && (
+                                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                                  推荐
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 共享分组 */}
-                        {sharedPlans.length > 0 && (
-                          <div className={sharedDisabled ? "opacity-50 pointer-events-none select-none" : ""}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-lg">👥</span>
-                              <h3 className="text-xl font-bold text-foreground">
-                                共享套餐{sharedDisabled ? "（您是独享用户，无法购买）" : "【不按套餐续费的用户链接被锁后果自负，不予解锁】"}
+                              )}
+                              <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
+                                {plan.title}
                               </h3>
+                              <div className="text-4xl font-extrabold text-client-primary mb-3">
+                                ¥{plan.price}
+                                <span className="text-base font-normal text-muted-foreground">
+                                  /{plan.duration_days}天
+                                </span>
+                              </div>
+                              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                                <li className="flex items-center">
+                                  <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" />{" "}
+                                  {plan.description || "独享带宽，速度有保障"}
+                                </li>
+                                <li className="flex items-center">
+                                  <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 增加{" "}
+                                  {plan.duration_days} 天有效期
+                                </li>
+                                <li className="flex items-center">
+                                  <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 立即重置流量
+                                </li>
+                              </ul>
+                              <button
+                                onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
+                                className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}
+                              >
+                                立即购买
+                              </button>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-4">
-                              多人共用线路，价格更实惠，适合日常轻度使用。
-                              {!sharedDisabled && "⚠️ 独享用户请勿续费共享，否则链接将被锁定"}
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                              {sharedPlans.map((plan) => (
-                                <div
-                                  key={plan.id}
-                                  className={`rounded-2xl p-6 relative transition-colors ${sharedDisabled ? "bg-muted border border-border grayscale" : plan.featured ? "border-2 border-success shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-success bg-card"}`}
-                                >
-                                  {plan.featured && !sharedDisabled && (
-                                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-success text-success-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
-                                      性价比
-                                    </div>
-                                  )}
-                                  <h3 className={`text-lg font-bold mb-2 ${plan.featured && !sharedDisabled ? "" : "text-muted-foreground"}`}>
-                                    {plan.title}
-                                  </h3>
-                                  <div className={`text-4xl font-extrabold mb-3 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`}>
-                                    ¥{plan.price}
-                                    <span className="text-base font-normal text-muted-foreground">/{plan.duration_days}天</span>
-                                  </div>
-                                  <ul className="text-sm text-muted-foreground space-y-2 mb-6">
-                                    <li className="flex items-center">
-                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`} /> {plan.description || "多人共享，价格实惠"}
-                                    </li>
-                                    <li className="flex items-center">
-                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`} /> 增加 {plan.duration_days} 天有效期
-                                    </li>
-                                    <li className="flex items-center">
-                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`} /> 立即重置流量
-                                    </li>
-                                  </ul>
-                                  <button
-                                    disabled={sharedDisabled}
-                                    onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
-                                    className={`w-full font-bold py-3 rounded-xl transition-colors ${sharedDisabled ? "bg-muted text-muted-foreground cursor-not-allowed" : plan.featured ? "bg-success text-success-foreground hover:opacity-90 shadow-md" : "bg-success/10 text-success hover:bg-success hover:text-success-foreground"}`}
-                                  >
-                                    {sharedDisabled ? "不可购买" : "立即购买"}
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                          ))}
+                      </div>
+                    </div>
+                  )}
 
-                        {dynamicPlans.length === 0 && (
-                          <div className="text-center text-muted-foreground py-12">暂无可用套餐</div>
-                        )}
-                      </>
-                    );
-                  })()}
+                  {/* 共享分组 */}
+                  {dynamicPlans.filter((p) => p.category === "shared").length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">👥</span>
+                        <h3 className="text-xl font-bold text-foreground">共享套餐</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        多人共用线路，价格更实惠，适合日常轻度使用。⚠️ 独享用户请勿续费共享，否则链接将被锁定
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        {dynamicPlans
+                          .filter((p) => p.category === "shared")
+                          .map((plan) => (
+                            <div
+                              key={plan.id}
+                              className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-success shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-success bg-card"}`}
+                            >
+                              {plan.featured && (
+                                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-success text-success-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                                  性价比
+                                </div>
+                              )}
+                              <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
+                                {plan.title}
+                              </h3>
+                              <div className="text-4xl font-extrabold text-success mb-3">
+                                ¥{plan.price}
+                                <span className="text-base font-normal text-muted-foreground">
+                                  /{plan.duration_days}天
+                                </span>
+                              </div>
+                              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                                <li className="flex items-center">
+                                  <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" />{" "}
+                                  {plan.description || "多人共享，价格实惠"}
+                                </li>
+                                <li className="flex items-center">
+                                  <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 增加{" "}
+                                  {plan.duration_days} 天有效期
+                                </li>
+                                <li className="flex items-center">
+                                  <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 立即重置流量
+                                </li>
+                              </ul>
+                              <button
+                                onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
+                                className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-success text-success-foreground hover:opacity-90 shadow-md" : "bg-success/10 text-success hover:bg-success hover:text-success-foreground"}`}
+                              >
+                                立即购买
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {dynamicPlans.length === 0 && (
+                    <div className="text-center text-muted-foreground py-12">暂无可用套餐</div>
+                  )}
                 </div>
               )}
             </div>
@@ -623,14 +609,20 @@ export default function ClientPortal() {
             <div className="animate-fade-in max-w-2xl mx-auto">
               <div className="flex items-center mb-6">
                 <button
-                  onClick={() => { cleanupPolling(); setTab("renew"); setPayStatus(null); }}
+                  onClick={() => {
+                    cleanupPolling();
+                    setTab("renew");
+                    setPayStatus(null);
+                  }}
                   className="text-muted-foreground hover:text-foreground mr-4 font-medium flex items-center"
                 >
                   &larr; 返回
                 </button>
                 <h2 className="text-2xl font-bold">收银台</h2>
                 {countdown > 0 && (
-                  <span className="ml-auto text-sm font-mono text-muted-foreground">⏱ {formatCountdown(countdown)}</span>
+                  <span className="ml-auto text-sm font-mono text-muted-foreground">
+                    ⏱ {formatCountdown(countdown)}
+                  </span>
                 )}
               </div>
 
@@ -639,7 +631,13 @@ export default function ClientPortal() {
                 <div className="bg-success/10 border border-success/20 p-6 rounded-2xl text-center mb-6">
                   <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-3" />
                   <h3 className="text-xl font-bold mb-2">支付成功！续期已完成</h3>
-                  <button onClick={() => { setTab("dashboard"); setPayStatus(null); }} className="bg-success text-success-foreground font-bold px-6 py-2 rounded-xl mt-2">
+                  <button
+                    onClick={() => {
+                      setTab("dashboard");
+                      setPayStatus(null);
+                    }}
+                    className="bg-success text-success-foreground font-bold px-6 py-2 rounded-xl mt-2"
+                  >
                     查看最新状态
                   </button>
                 </div>
@@ -654,7 +652,13 @@ export default function ClientPortal() {
                 <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-2xl text-center mb-6">
                   <h3 className="text-lg font-bold mb-2">⏰ 订单已超时</h3>
                   <p className="text-muted-foreground text-sm mb-3">请返回重新下单</p>
-                  <button onClick={() => { setTab("renew"); setPayStatus(null); }} className="bg-client-primary text-client-primary-foreground font-bold px-6 py-2 rounded-xl">
+                  <button
+                    onClick={() => {
+                      setTab("renew");
+                      setPayStatus(null);
+                    }}
+                    className="bg-client-primary text-client-primary-foreground font-bold px-6 py-2 rounded-xl"
+                  >
                     重新选择套餐
                   </button>
                 </div>
@@ -681,34 +685,49 @@ export default function ClientPortal() {
                       <h3 className="font-bold mb-4">请选择支付方式</h3>
                       <div className="grid grid-cols-2 gap-4 mb-6">
                         {config.hupi_wechat && (
-                          <button onClick={() => setSelectedMethod("wechat")}
-                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
-                            <Smartphone className="w-8 h-8 mb-2 text-success" /><span className="font-bold">微信支付</span>
+                          <button
+                            onClick={() => setSelectedMethod("wechat")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "wechat" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}
+                          >
+                            <Smartphone className="w-8 h-8 mb-2 text-success" />
+                            <span className="font-bold">微信支付</span>
                           </button>
                         )}
                         {config.hupi_alipay && (
-                          <button onClick={() => setSelectedMethod("alipay")}
-                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}>
-                            <Smartphone className="w-8 h-8 mb-2 text-accent" /><span className="font-bold">支付宝</span>
+                          <button
+                            onClick={() => setSelectedMethod("alipay")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "alipay" ? "border-accent bg-accent/10 text-accent" : "border-border hover:border-accent/50"}`}
+                          >
+                            <Smartphone className="w-8 h-8 mb-2 text-accent" />
+                            <span className="font-bold">支付宝</span>
                           </button>
                         )}
                         {config.crypto_usdt && (
-                          <button onClick={() => handleSelectCrypto("usdt")}
-                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "usdt" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}>
-                            <Bitcoin className="w-8 h-8 mb-2 text-success" /><span className="font-bold">USDT (TRC20)</span>
+                          <button
+                            onClick={() => handleSelectCrypto("usdt")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "usdt" ? "border-success bg-success/10 text-success" : "border-border hover:border-success/50"}`}
+                          >
+                            <Bitcoin className="w-8 h-8 mb-2 text-success" />
+                            <span className="font-bold">USDT (TRC20)</span>
                           </button>
                         )}
                         {config.crypto_trx && (
-                          <button onClick={() => handleSelectCrypto("trx")}
-                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "trx" ? "border-destructive bg-destructive/10 text-destructive" : "border-border hover:border-destructive/50"}`}>
-                            <Bitcoin className="w-8 h-8 mb-2 text-destructive" /><span className="font-bold">TRX (波场)</span>
+                          <button
+                            onClick={() => handleSelectCrypto("trx")}
+                            className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${selectedMethod === "trx" ? "border-destructive bg-destructive/10 text-destructive" : "border-border hover:border-destructive/50"}`}
+                          >
+                            <Bitcoin className="w-8 h-8 mb-2 text-destructive" />
+                            <span className="font-bold">TRX (波场)</span>
                           </button>
                         )}
                       </div>
 
                       {selectedMethod && !["usdt", "trx"].includes(selectedMethod) && (
-                        <button onClick={confirmPayment} disabled={orderCreating}
-                          className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                        <button
+                          onClick={confirmPayment}
+                          disabled={orderCreating}
+                          className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md"
+                        >
                           {orderCreating ? "正在创建订单..." : "确认支付方式"}
                         </button>
                       )}
@@ -723,8 +742,11 @@ export default function ClientPortal() {
                           <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
                             {config.crypto_address || "（站长未设置收款地址）"}
                           </div>
-                          <button onClick={confirmPayment} disabled={orderCreating}
-                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                          <button
+                            onClick={confirmPayment}
+                            disabled={orderCreating}
+                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md"
+                          >
                             {orderCreating ? "正在创建订单..." : "确认下单并去转账"}
                           </button>
                         </div>
@@ -751,11 +773,15 @@ export default function ClientPortal() {
                             {config.crypto_address}
                           </div>
                           {error && <p className="text-warning text-sm mb-3">{error}</p>}
-                          <button onClick={handleCryptoVerify}
-                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md">
+                          <button
+                            onClick={handleCryptoVerify}
+                            className="w-full bg-client-primary text-client-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-colors shadow-md"
+                          >
                             我已转账，点击验证
                           </button>
-                          <p className="text-xs text-muted-foreground mt-3">系统每5秒自动检测链上转账，也可手动点击验证</p>
+                          <p className="text-xs text-muted-foreground mt-3">
+                            系统每5秒自动检测链上转账，也可手动点击验证
+                          </p>
                         </div>
                       )}
 
@@ -765,11 +791,19 @@ export default function ClientPortal() {
                             ✅ 订单已创建，请扫码支付
                           </div>
                           {qrCodeUrl ? (
-                            <img src={qrCodeUrl} alt="支付二维码" className="w-48 h-48 mx-auto mb-4 rounded-xl border border-border" />
+                            <img
+                              src={qrCodeUrl}
+                              alt="支付二维码"
+                              className="w-48 h-48 mx-auto mb-4 rounded-xl border border-border"
+                            />
                           ) : payUrl ? (
                             <div className="mb-4">
-                              <a href={payUrl} target="_blank" rel="noopener noreferrer"
-                                className="inline-block bg-client-primary text-client-primary-foreground font-bold px-6 py-3 rounded-xl hover:opacity-90">
+                              <a
+                                href={payUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block bg-client-primary text-client-primary-foreground font-bold px-6 py-3 rounded-xl hover:opacity-90"
+                              >
                                 点击打开支付页面
                               </a>
                             </div>
