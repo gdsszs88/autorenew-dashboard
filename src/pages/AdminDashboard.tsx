@@ -140,15 +140,43 @@ export default function AdminDashboard() {
 
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm("确定删除该订单？")) return;
-    const key = `del-order-${orderId}`;
-    setBtnStatus(prev => ({ ...prev, [key]: "删除中..." }));
     try {
       await adminDeleteOrder(token, orderId);
       setOrders(orders.filter(o => o.id !== orderId));
       setOrdersTotal(prev => prev - 1);
+      setSelectedOrders(prev => { const s = new Set(prev); s.delete(orderId); return s; });
+    } catch {}
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedOrders.size === 0) return;
+    if (!confirm(`确定删除选中的 ${selectedOrders.size} 条订单？`)) return;
+    setBtnStatus(prev => ({ ...prev, batchDel: "删除中..." }));
+    try {
+      await adminBatchDeleteOrders(token, Array.from(selectedOrders));
+      setOrders(orders.filter(o => !selectedOrders.has(o.id)));
+      setOrdersTotal(prev => prev - selectedOrders.size);
+      setSelectedOrders(new Set());
+      setBtnStatus(prev => ({ ...prev, batchDel: "✅ 已删除" }));
     } catch {
-      setBtnStatus(prev => ({ ...prev, [key]: "❌ 失败" }));
-      setTimeout(() => setBtnStatus(prev => ({ ...prev, [key]: "" })), 2000);
+      setBtnStatus(prev => ({ ...prev, batchDel: "❌ 失败" }));
+    }
+    setTimeout(() => setBtnStatus(prev => ({ ...prev, batchDel: "" })), 2000);
+  };
+
+  const toggleSelectOrder = (id: string) => {
+    setSelectedOrders(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrders.size === orders.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(orders.map(o => o.id)));
     }
   };
 
