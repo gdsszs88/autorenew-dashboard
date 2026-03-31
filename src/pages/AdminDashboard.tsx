@@ -127,6 +127,16 @@ export default function AdminDashboard() {
     } catch {}
   };
 
+  const loadOrders = async (page = 1, search = ordersSearch, status = ordersStatus) => {
+    setOrdersLoading(true);
+    try {
+      const res = await adminGetOrders(token, { page, pageSize: 20, search: search || undefined, statusFilter: status });
+      if (res?.orders) setOrders(res.orders);
+      if (res?.total != null) setOrdersTotal(res.total);
+    } catch {}
+    setOrdersLoading(false);
+  };
+
   const setBtnLoading = (key: string, text: string) => {
     setBtnStatus(prev => ({ ...prev, [key]: text }));
   };
