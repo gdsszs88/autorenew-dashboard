@@ -593,7 +593,11 @@ export default function AdminDashboard() {
                       </thead>
                       <tbody>
                         {orders.map(order => (
-                          <tr key={order.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                          <tr key={order.id} className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${selectedOrders.has(order.id) ? "bg-accent/5" : ""}`}>
+                            <td className="py-3 px-2">
+                              <input type="checkbox" checked={selectedOrders.has(order.id)}
+                                onChange={() => toggleSelectOrder(order.id)} className="w-4 h-4 rounded cursor-pointer" />
+                            </td>
                             <td className="py-3 px-2 font-mono text-xs max-w-[140px] truncate" title={order.uuid}>{order.uuid.slice(0, 8)}...</td>
                             <td className="py-3 px-2">
                               <span className="font-medium">{order.plan_name}</span>
