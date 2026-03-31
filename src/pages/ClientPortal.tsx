@@ -859,11 +859,20 @@ export default function ClientPortal() {
                         </button>
                       )}
 
-                      {["usdt", "trx"].includes(selectedMethod) && (
+                      {ratesLoading && (
+                        <div className="text-center text-muted-foreground py-4 animate-pulse">正在获取实时汇率...</div>
+                      )}
+
+                      {["usdt", "trx"].includes(selectedMethod) && !ratesLoading && (
                         <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
                           <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
                             ⚠️ 防撞单机制：请严格按照下方显示的精确金额付款，否则系统无法自动到账！
                           </div>
+                          {exchangeRates && (
+                            <p className="text-xs text-muted-foreground mb-2">
+                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥{(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
+                            </p>
+                          )}
                           <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
                           <div className="text-4xl font-extrabold text-client-primary mb-6">{cryptoPrice}</div>
                           <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
