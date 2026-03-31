@@ -112,6 +112,7 @@ Deno.serve(async (req) => {
         tawk_id: config.tawkId,
         qq_qrcode_url: config.qqQrcodeUrl,
         telegram_link: config.telegramLink,
+        video_embed: config.videoEmbed,
       };
 
       const { error } = await supabase
