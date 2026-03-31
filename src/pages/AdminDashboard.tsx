@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings, Server, QrCode, Bitcoin, CheckCircle2, Plus, Trash2, Package } from "lucide-react";
+import { Settings, Server, QrCode, Bitcoin, CheckCircle2, Plus, Trash2, Package, ClipboardList, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan } from "@/lib/api";
+import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan, adminGetOrders } from "@/lib/api";
 
 interface AdminConfigData {
   panelUrl: string;
