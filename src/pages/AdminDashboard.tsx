@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings, Server, DollarSign, QrCode, Bitcoin, CheckCircle2 } from "lucide-react";
-import { getAdminConfig, saveAdminConfig, testPanelConnection } from "@/lib/api";
+import { Settings, Server, DollarSign, QrCode, Bitcoin, CheckCircle2, Plus, Trash2, GripVertical, Package } from "lucide-react";
+import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan } from "@/lib/api";
 
 interface AdminConfigData {
   panelUrl: string;
@@ -26,6 +26,19 @@ interface AdminConfigData {
   cryptoKey: string;
   cryptoUsdt: boolean;
   cryptoTrx: boolean;
+}
+
+interface Plan {
+  id: string;
+  title: string;
+  category: string;
+  duration_months: number;
+  duration_days: number;
+  price: number;
+  description: string;
+  sort_order: number;
+  featured: boolean;
+  enabled: boolean;
 }
 
 const defaultConfig: AdminConfigData = {
@@ -55,6 +68,7 @@ const defaultConfig: AdminConfigData = {
 
 export default function AdminDashboard() {
   const [config, setConfig] = useState<AdminConfigData>(defaultConfig);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [saveStatus, setSaveStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -66,6 +80,7 @@ export default function AdminDashboard() {
       return;
     }
     loadConfig();
+    loadPlans();
   }, []);
 
   const loadConfig = async () => {
@@ -77,6 +92,13 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadPlans = async () => {
+    try {
+      const res = await adminGetPlans(token);
+      if (res?.plans) setPlans(res.plans);
+    } catch {}
   };
 
   const handleSave = async () => {
@@ -99,6 +121,57 @@ export default function AdminDashboard() {
       setSaveStatus("连接测试失败");
     }
     setTimeout(() => setSaveStatus(""), 5000);
+  };
+
+  const handleAddPlan = async () => {
+    try {
+      const maxSort = plans.length > 0 ? Math.max(...plans.map(p => p.sort_order)) : 0;
+      await adminCreatePlan(token, {
+        title: "新套餐",
+        category: "exclusive",
+        duration_months: 1,
+        duration_days: 30,
+        price: 10,
+        description: "套餐描述",
+        sort_order: maxSort + 1,
+        featured: false,
+        enabled: true,
+      });
+      await loadPlans();
+      setSaveStatus("套餐已添加");
+      setTimeout(() => setSaveStatus(""), 2000);
+    } catch {
+      setSaveStatus("添加失败");
+      setTimeout(() => setSaveStatus(""), 2000);
+    }
+  };
+
+  const handleUpdatePlan = async (plan: Plan) => {
+    try {
+      await adminUpdatePlan(token, plan);
+      setSaveStatus("套餐已更新");
+      setTimeout(() => setSaveStatus(""), 2000);
+    } catch {
+      setSaveStatus("更新失败");
+      setTimeout(() => setSaveStatus(""), 2000);
+    }
+  };
+
+  const handleDeletePlan = async (id: string) => {
+    if (!confirm("确定删除该套餐？")) return;
+    try {
+      await adminDeletePlan(token, id);
+      setPlans(plans.filter(p => p.id !== id));
+      setSaveStatus("套餐已删除");
+      setTimeout(() => setSaveStatus(""), 2000);
+    } catch {
+      setSaveStatus("删除失败");
+      setTimeout(() => setSaveStatus(""), 2000);
+    }
+  };
+
+  const updatePlanField = (id: string, field: keyof Plan, value: any) => {
+    setPlans(plans.map(p => p.id === id ? { ...p, [field]: value } : p));
   };
 
   const logout = () => {
@@ -131,6 +204,92 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* 商品管理 - Full width */}
+        <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+          <div className="flex items-center justify-between mb-6 border-b border-border pb-3">
+            <h2 className="text-xl font-bold flex items-center text-client-primary">
+              <Package className="w-5 h-5 mr-2" /> 商品管理
+            </h2>
+            <button onClick={handleAddPlan}
+              className="bg-client-primary text-client-primary-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors flex items-center text-sm shadow-md">
+              <Plus className="w-4 h-4 mr-1" /> 添加套餐
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">💡 修改后请点击每行右侧的"保存"按钮。添加/删除套餐不影响现有支付接口。</p>
+          <div className="space-y-3">
+            {plans.map(plan => (
+              <div key={plan.id} className="bg-muted border border-border rounded-xl p-4">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                  <div className="md:col-span-3">
+                    <label className="block text-xs text-muted-foreground mb-1">标题</label>
+                    <input type="text" value={plan.title}
+                      onChange={e => updatePlanField(plan.id, "title", e.target.value)}
+                      className="w-full border border-input p-2 rounded-lg text-sm bg-background focus:ring-2 focus:ring-client-primary outline-none" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs text-muted-foreground mb-1">分类</label>
+                    <select value={plan.category}
+                      onChange={e => updatePlanField(plan.id, "category", e.target.value)}
+                      className="w-full border border-input p-2 rounded-lg text-sm bg-background focus:ring-2 focus:ring-client-primary outline-none">
+                      <option value="exclusive">🔒 独享</option>
+                      <option value="shared">👥 共享</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-1">
+                    <label className="block text-xs text-muted-foreground mb-1">天数</label>
+                    <input type="number" value={plan.duration_days}
+                      onChange={e => {
+                        const days = Number(e.target.value);
+                        updatePlanField(plan.id, "duration_days", days);
+                        updatePlanField(plan.id, "duration_months", Math.round(days / 30) || 1);
+                      }}
+                      className="w-full border border-input p-2 rounded-lg text-sm bg-background focus:ring-2 focus:ring-client-primary outline-none" />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label className="block text-xs text-muted-foreground mb-1">价格¥</label>
+                    <input type="number" value={plan.price}
+                      onChange={e => updatePlanField(plan.id, "price", Number(e.target.value))}
+                      className="w-full border border-input p-2 rounded-lg text-sm bg-background focus:ring-2 focus:ring-client-primary outline-none" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs text-muted-foreground mb-1">描述</label>
+                    <input type="text" value={plan.description}
+                      onChange={e => updatePlanField(plan.id, "description", e.target.value)}
+                      className="w-full border border-input p-2 rounded-lg text-sm bg-background focus:ring-2 focus:ring-client-primary outline-none" />
+                  </div>
+                  <div className="md:col-span-1 flex items-end gap-2">
+                    <label className="flex items-center gap-1 cursor-pointer text-xs">
+                      <input type="checkbox" checked={plan.featured}
+                        onChange={e => updatePlanField(plan.id, "featured", e.target.checked)}
+                        className="w-4 h-4 rounded" />
+                      推荐
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer text-xs">
+                      <input type="checkbox" checked={plan.enabled}
+                        onChange={e => updatePlanField(plan.id, "enabled", e.target.checked)}
+                        className="w-4 h-4 rounded" />
+                      启用
+                    </label>
+                  </div>
+                  <div className="md:col-span-2 flex items-end gap-2">
+                    <button onClick={() => handleUpdatePlan(plan)}
+                      className="bg-success text-success-foreground px-3 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-colors">
+                      保存
+                    </button>
+                    <button onClick={() => handleDeletePlan(plan.id)}
+                      className="bg-destructive/10 text-destructive px-3 py-2 rounded-lg text-xs font-bold hover:bg-destructive/20 transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {plans.length === 0 && (
+              <div className="text-center text-muted-foreground py-8">暂无套餐，点击上方"添加套餐"创建</div>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 面板对接 */}
           <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
@@ -161,58 +320,6 @@ export default function AdminDashboard() {
                   保存配置
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* 套餐价格 */}
-          <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
-            <h2 className="text-xl font-bold mb-6 flex items-center text-success border-b border-border pb-3">
-              <DollarSign className="w-5 h-5 mr-2" /> 套餐价格设置 (人民币)
-            </h2>
-            <div className="space-y-6">
-              {/* 独享分组 */}
-              <div>
-                <h3 className="text-sm font-bold text-foreground mb-3 bg-client-primary/10 text-client-primary px-3 py-1.5 rounded-lg inline-block">🔒 独享分组</h3>
-                <div className="space-y-3">
-                  {[
-                    { label: "独享月付 (30天)", key: "priceExclusiveMonth" as const },
-                    { label: "独享季付 (90天)", key: "priceExclusiveQuarter" as const },
-                    { label: "独享年付 (365天)", key: "priceExclusiveYear" as const },
-                  ].map(item => (
-                    <div key={item.key} className="flex items-center space-x-4 bg-muted p-3 rounded-lg border border-border">
-                      <label className="w-32 text-sm font-bold">{item.label}</label>
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-2.5 text-muted-foreground">¥</span>
-                        <input type="number" value={config[item.key]} onChange={e => setConfig({ ...config, [item.key]: Number(e.target.value) })}
-                          className="w-full border border-input p-2.5 pl-8 rounded-lg focus:ring-2 focus:ring-success outline-none bg-background" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* 共享分组 */}
-              <div>
-                <h3 className="text-sm font-bold text-foreground mb-3 bg-success/10 text-success px-3 py-1.5 rounded-lg inline-block">👥 共享分组</h3>
-                <div className="space-y-3">
-                  {[
-                    { label: "共享月付 (30天)", key: "priceSharedMonth" as const },
-                    { label: "共享季付 (90天)", key: "priceSharedQuarter" as const },
-                    { label: "共享年付 (365天)", key: "priceSharedYear" as const },
-                  ].map(item => (
-                    <div key={item.key} className="flex items-center space-x-4 bg-muted p-3 rounded-lg border border-border">
-                      <label className="w-32 text-sm font-bold">{item.label}</label>
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-2.5 text-muted-foreground">¥</span>
-                        <input type="number" value={config[item.key]} onChange={e => setConfig({ ...config, [item.key]: Number(e.target.value) })}
-                          className="w-full border border-input p-2.5 pl-8 rounded-lg focus:ring-2 focus:ring-success outline-none bg-background" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button onClick={handleSave} className="w-full bg-success text-success-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
-                <CheckCircle2 className="w-5 h-5 mr-2" /> 同步至客户前台
-              </button>
             </div>
           </div>
 
@@ -269,11 +376,11 @@ export default function AdminDashboard() {
           </div>
 
           {/* 虚拟货币 */}
-          <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+          <div className="bg-card p-6 rounded-2xl shadow-sm border border-border md:col-span-2">
             <h2 className="text-xl font-bold mb-6 flex items-center text-accent border-b border-border pb-3">
               <Bitcoin className="w-5 h-5 mr-2" /> 虚拟货币设置 (TronGrid)
             </h2>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold mb-1">收款钱包地址 (TRC20)</label>
                 <input type="text" value={config.cryptoAddress} onChange={e => setConfig({ ...config, cryptoAddress: e.target.value })}
@@ -294,14 +401,14 @@ export default function AdminDashboard() {
                   <span className="font-bold">支持 TRX</span>
                 </label>
               </div>
-              <div className="bg-accent/10 text-accent text-xs p-3 rounded-lg mt-2 border border-accent/20">
+              <div className="bg-accent/10 text-accent text-xs p-3 rounded-lg border border-accent/20">
                 <span className="font-bold">💡 防撞单机制已启用：</span>
                 客户使用虚拟货币付款时，系统会自动在原价基础上加上 <b>0.001 - 0.0019</b> 的随机尾数以唯一标识订单。
               </div>
-              <button onClick={handleSave} className="w-full bg-accent text-accent-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center">
-                <CheckCircle2 className="w-5 h-5 mr-2" /> 保存加密货币配置
-              </button>
             </div>
+            <button onClick={handleSave} className="w-full bg-accent text-accent-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center mt-4">
+              <CheckCircle2 className="w-5 h-5 mr-2" /> 保存加密货币配置
+            </button>
           </div>
         </div>
       </div>
