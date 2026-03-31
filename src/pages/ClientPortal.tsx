@@ -371,9 +371,11 @@ export default function ClientPortal() {
       .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   // Login screen
+  const videoHtml = useMemo(() => parseVideoEmbed(videoEmbed), [videoEmbed]);
+
   if (!logged) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted p-4 relative">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted p-4 relative">
         <Link to="/" className="absolute top-4 left-4 text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
         <div className="absolute top-4 right-4"><ThemeToggle /></div>
         <div className="max-w-md w-full bg-card rounded-2xl shadow-xl overflow-hidden">
@@ -382,6 +384,11 @@ export default function ClientPortal() {
             <h1 className="text-2xl font-bold text-client-primary-foreground mb-2">节点自助服务中心</h1>
             <p className="text-client-primary-foreground/80 text-sm">支持直接粘贴链接 或 扫码识别</p>
           </div>
+          {videoHtml && (
+            <div className="px-6 pt-6">
+              <div dangerouslySetInnerHTML={{ __html: videoHtml }} className="rounded-xl overflow-hidden" />
+            </div>
+          )}
           <div className="p-8">
             <form onSubmit={handleLogin}>
               <div className="relative mb-6">
