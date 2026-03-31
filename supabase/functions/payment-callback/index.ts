@@ -241,12 +241,15 @@ async function findClient(panelUrl: string, cookie: string, identifier: string) 
 
         if (candidateKeys.includes(identifier)) {
           // For SOCKS5 accounts, email may not exist; use inbound.remark
+          const isSocks5 = Array.isArray(settings.accounts) && settings.accounts.includes(entry);
           const email = entry.email || inbound.remark || entry.user || entry.username || "";
+          // SOCKS5 expiryTime is at inbound level, not account level
+          const expiryTime = isSocks5 ? (inbound.expiryTime || 0) : (entry.expiryTime || 0);
           return {
             inboundId: inbound.id,
             email,
-            expiryTime: entry.expiryTime || 0,
-            isSocks5: Array.isArray(settings.accounts) && settings.accounts.includes(entry),
+            expiryTime,
+            isSocks5,
           };
         }
       }
