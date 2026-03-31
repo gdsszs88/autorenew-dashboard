@@ -65,6 +65,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "delete") {
+      const { orderId } = await req.json().catch(() => ({ orderId: null }));
+      const id = orderId || (await req.json().catch(() => ({}))).orderId;
+      if (!orderId) {
+        return new Response(JSON.stringify({ error: "缺少 orderId" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error } = await supabase.from("orders").delete().eq("id", orderId);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
