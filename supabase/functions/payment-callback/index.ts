@@ -256,7 +256,7 @@ async function findClient(panelUrl: string, cookie: string, identifier: string) 
 }
 
 // Extend client expiry via 3x-ui API
-async function extendExpiry(panelUrl: string, cookie: string, inboundId: number, email: string, currentExpiry: number, months: number): Promise<boolean> {
+async function extendExpiry(panelUrl: string, cookie: string, inboundId: number, email: string, currentExpiry: number, months: number, isSocks5: boolean): Promise<boolean> {
   const baseUrl = panelUrl.replace(/\/+$/, "");
   
   // Calculate new expiry: if current expiry is 0 or in the past, start from now
@@ -264,7 +264,42 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
   const baseTime = (currentExpiry > 0 && currentExpiry > now) ? currentExpiry : now;
   const newExpiry = baseTime + months * 30 * 24 * 60 * 60 * 1000;
 
-  // Reset traffic for the client
+  if (isSocks5) {
+    // SOCKS5: reset traffic at inbound level (set up/down to 0) and update inbound expiryTime
+    const inboundRes = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/get/${inboundId}`, {
+      headers: { Cookie: cookie, Accept: "application/json" },
+    });
+    const inboundData = await inboundRes.json();
+    if (!inboundData?.success || !inboundData?.obj) return false;
+
+    const inbound = inboundData.obj;
+
+    const formData = new URLSearchParams();
+    formData.append("up", "0");
+    formData.append("down", "0");
+    formData.append("total", String(inbound.total));
+    formData.append("remark", inbound.remark || "");
+    formData.append("enable", String(inbound.enable));
+    formData.append("expiryTime", String(newExpiry));
+    formData.append("listen", inbound.listen || "");
+    formData.append("port", String(inbound.port));
+    formData.append("protocol", inbound.protocol);
+    formData.append("settings", inbound.settings || "{}");
+    formData.append("streamSettings", inbound.streamSettings || "");
+    formData.append("sniffing", inbound.sniffing || "");
+    formData.append("allocate", inbound.allocate || "");
+
+    const updateRes = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/update/${inboundId}`, {
+      method: "POST",
+      headers: { Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData.toString(),
+    });
+    const updateBody = await updateRes.json();
+    console.log("SOCKS5 update inbound result:", updateBody);
+    return updateBody?.success === true;
+  }
+
+  // Standard protocol (VMESS/VLESS/Trojan): reset traffic by email, update client expiryTime
   const resetRes = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/${inboundId}/resetClientTraffic/${encodeURIComponent(email)}`, {
     method: "POST",
     headers: { Cookie: cookie, Accept: "application/json" },
@@ -272,8 +307,6 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
   const resetBody = await resetRes.json();
   console.log("Reset traffic result:", resetBody);
 
-  // Update client expiry time
-  // We need to get the inbound first, modify the client, then update
   const inboundRes = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/get/${inboundId}`, {
     headers: { Cookie: cookie, Accept: "application/json" },
   });
@@ -283,21 +316,16 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
   const inbound = inboundData.obj;
   const settings = JSON.parse(inbound.settings || "{}");
   
-  // Search in both clients (VMESS/VLESS) and accounts (SOCKS5)
   let found = false;
-  for (const list of [settings.clients || [], settings.accounts || []]) {
-    for (const entry of list) {
-      const entryEmail = entry.email || entry.user || entry.username || "";
-      if (entryEmail === email) {
-        entry.expiryTime = newExpiry;
-        found = true;
-        break;
-      }
+  for (const entry of (settings.clients || [])) {
+    const entryEmail = entry.email || "";
+    if (entryEmail === email) {
+      entry.expiryTime = newExpiry;
+      found = true;
+      break;
     }
-    if (found) break;
   }
 
-  // Update the inbound with new settings
   const formData = new URLSearchParams();
   formData.append("up", String(inbound.up));
   formData.append("down", String(inbound.down));
