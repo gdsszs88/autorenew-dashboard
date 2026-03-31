@@ -164,6 +164,51 @@ export type Database = {
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          duration_days: number
+          duration_months: number
+          enabled: boolean
+          featured: boolean
+          id: string
+          price: number
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          duration_days?: number
+          duration_months?: number
+          enabled?: boolean
+          featured?: boolean
+          id?: string
+          price?: number
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          duration_days?: number
+          duration_months?: number
+          enabled?: boolean
+          featured?: boolean
+          id?: string
+          price?: number
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
