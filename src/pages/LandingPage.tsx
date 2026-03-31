@@ -112,19 +112,6 @@ export default function LandingPage() {
         .lp-faq-answer-inner p { margin-bottom: 10px; }
         .lp-faq-item.active .lp-faq-answer { max-height: 500px; }
         .lp-footer { text-align: center; padding: 40px 20px; background-color: #1a202c; color: #a0aec0; }
-        .lp-fab-container { position: fixed; top: 50%; transform: translateY(-50%); right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 999; }
-        .lp-fab { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s cubic-bezier(0.25,0.8,0.25,1); position: relative; border: none; cursor: pointer; }
-        .lp-fab svg { width: 28px; height: 28px; fill: currentColor; }
-        .lp-fab.qq { background-color: #12b7f5; }
-        .lp-fab.tg { background-color: #24A1DE; }
-        .lp-fab.chat { background-color: var(--lp-primary); }
-        .lp-fab:hover { transform: scale(1.1); }
-        .lp-fab-tooltip { position: absolute; right: 70px; top: 50%; background-color: rgba(0,0,0,0.8); color: white; padding: 6px 12px; border-radius: 6px; font-size: 14px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; transform: translate(10px, -50%); }
-        .lp-fab:hover .lp-fab-tooltip { opacity: 1; transform: translate(0, -50%); }
-        .lp-qr-popup { position: absolute; right: 70px; top: 50%; background-color: white; padding: 10px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.25,0.8,0.25,1); transform: translate(15px, -50%) scale(0.9); transform-origin: right center; display: flex; flex-direction: column; align-items: center; }
-        .lp-qr-popup img { width: 120px; height: 120px; display: block; border-radius: 4px; border: 1px solid #f0f0f0; }
-        .lp-qr-popup .qr-text { margin-top: 8px; font-size: 13px; color: #2c3e50; font-weight: bold; white-space: nowrap; }
-        .lp-fab.qq:hover .lp-qr-popup { opacity: 1; transform: translate(0, -50%) scale(1); }
         @media (max-width: 992px) {
           .lp-features-grid { grid-template-columns: repeat(2, 1fr); }
           .lp-hero { flex-direction: column-reverse; text-align: center; padding: 40px 5%; }
