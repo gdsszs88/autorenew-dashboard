@@ -557,6 +557,15 @@ export default function AdminDashboard() {
                 >
                   搜索
                 </button>
+                {selectedOrders.size > 0 && (
+                  <button
+                    onClick={handleBatchDelete}
+                    disabled={!!btnStatus["batchDel"]}
+                    className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors text-sm disabled:opacity-70 flex items-center gap-1"
+                  >
+                    <Trash2 className="w-4 h-4" /> {btnStatus["batchDel"] || `删除 (${selectedOrders.size})`}
+                  </button>
+                )}
               </div>
 
               {ordersLoading ? (
