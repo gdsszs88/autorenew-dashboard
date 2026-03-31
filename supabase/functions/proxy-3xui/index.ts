@@ -93,35 +93,45 @@ async function getInbounds(panelUrl: string, cookie: string) {
   return await res.json();
 }
 
-// Find client by UUID or SOCKS5 username/password in all inbounds
+// Find client by UUID / SOCKS5 identifier in all inbounds
 function findClientByIdentifier(inboundsData: any, identifier: string) {
   if (!inboundsData?.success || !inboundsData?.obj) return null;
 
   for (const inbound of inboundsData.obj) {
     try {
       const settings = JSON.parse(inbound.settings || "{}");
-      const clients = settings.clients || [];
-      for (const client of clients) {
-        // Match UUID (id/password for vmess/vless/trojan) or SOCKS5 username/password
-        const match =
-          client.id === identifier ||
-          client.password === identifier ||
-          client.username === identifier;
-        if (match) {
-          const clientStats = inbound.clientStats?.find(
-            (s: any) => s.email === client.email
-          );
-          return {
-            found: true,
-            email: client.email,
-            expiryTime: client.expiryTime || inbound.expiryTime || 0,
-            up: clientStats?.up || 0,
-            down: clientStats?.down || 0,
-            total: client.totalGB ? client.totalGB * 1073741824 : clientStats?.total || 0,
-            inboundId: inbound.id,
-            enable: clientStats?.enable ?? client.enable ?? true,
-          };
-        }
+      const entries = [
+        ...(Array.isArray(settings.clients) ? settings.clients : []),
+        ...(Array.isArray(settings.accounts) ? settings.accounts : []),
+      ];
+
+      for (const entry of entries) {
+        const candidateKeys = [
+          entry?.id,
+          entry?.email,
+          entry?.user,
+          entry?.username,
+          entry?.pass,
+          entry?.password,
+        ].filter((value): value is string => typeof value === "string" && value.length > 0);
+
+        if (!candidateKeys.includes(identifier)) continue;
+
+        const clientStats = inbound.clientStats?.find((s: any) => {
+          const statsKey = typeof s?.email === "string" ? s.email : "";
+          return statsKey.length > 0 && candidateKeys.includes(statsKey);
+        });
+
+        return {
+          found: true,
+          email: entry.email || clientStats?.email || entry.user || entry.username || "",
+          expiryTime: entry.expiryTime || clientStats?.expiryTime || inbound.expiryTime || 0,
+          up: clientStats?.up || 0,
+          down: clientStats?.down || 0,
+          total: entry.totalGB ? entry.totalGB * 1073741824 : clientStats?.total || 0,
+          inboundId: inbound.id,
+          enable: clientStats?.enable ?? entry.enable ?? true,
+        };
       }
     } catch {}
   }
