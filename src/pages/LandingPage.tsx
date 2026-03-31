@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -121,9 +122,12 @@ export default function LandingPage() {
             <div className="lp-logo-icon">IP</div>
             静态住址服务
           </a>
-          <Link to="/portal" className="lp-nav-link">
-            充值与续费
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", position: "absolute", right: "5%" }}>
+            <Link to="/portal" className="lp-nav-link">
+              充值与续费
+            </Link>
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Hero */}

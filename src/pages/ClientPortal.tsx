@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   User,
   CreditCard,
@@ -349,6 +350,7 @@ export default function ClientPortal() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted p-4 relative">
         <Link to="/" className="absolute top-4 left-4 text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
+        <div className="absolute top-4 right-4"><ThemeToggle /></div>
         <div className="max-w-md w-full bg-card rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-client-primary p-8 text-center">
             <User className="w-16 h-16 text-client-primary-foreground mx-auto mb-4" />
@@ -417,12 +419,15 @@ export default function ClientPortal() {
             <Activity className="mr-2" /> 自助服务中心
           </div>
         </div>
-        <button
-          onClick={() => setLogged(false)}
-          className="text-muted-foreground hover:text-foreground flex items-center text-sm font-medium"
-        >
-          <LogOut className="w-4 h-4 mr-1" /> 退出
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setLogged(false)}
+            className="text-muted-foreground hover:text-foreground flex items-center text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4 mr-1" /> 退出
+          </button>
+          <ThemeToggle />
+        </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-4 gap-8">
