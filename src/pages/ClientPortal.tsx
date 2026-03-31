@@ -350,6 +350,7 @@ export default function ClientPortal() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted p-4 relative">
         <Link to="/" className="absolute top-4 left-4 text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
+        <div className="absolute top-4 right-4"><ThemeToggle /></div>
         <div className="max-w-md w-full bg-card rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-client-primary p-8 text-center">
             <User className="w-16 h-16 text-client-primary-foreground mx-auto mb-4" />
