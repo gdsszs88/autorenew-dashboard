@@ -15,7 +15,7 @@ import {
   QrCode,
   Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment, getPlans, getOrders } from "@/lib/api";
+import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment, getPlans, getOrders, getExchangeRates } from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
