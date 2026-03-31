@@ -8,6 +8,7 @@ import ClientPortal from "./pages/ClientPortal";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import FloatingButtons from "./components/FloatingButtons";
 
 const queryClient = new QueryClient();
 
@@ -16,15 +17,16 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/portal" element={<ClientPortal />} />
-          <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+        <BrowserRouter>
+          <FloatingButtons />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/portal" element={<ClientPortal />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
