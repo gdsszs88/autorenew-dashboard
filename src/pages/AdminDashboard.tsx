@@ -578,6 +578,10 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-border text-left text-muted-foreground">
+                          <th className="py-3 px-2 w-8">
+                            <input type="checkbox" checked={orders.length > 0 && selectedOrders.size === orders.length}
+                              onChange={toggleSelectAll} className="w-4 h-4 rounded cursor-pointer" />
+                          </th>
                           <th className="py-3 px-2 font-semibold">UUID</th>
                           <th className="py-3 px-2 font-semibold">套餐</th>
                           <th className="py-3 px-2 font-semibold">金额</th>
