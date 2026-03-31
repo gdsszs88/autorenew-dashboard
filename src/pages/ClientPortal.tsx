@@ -511,8 +511,10 @@ export default function ClientPortal() {
                         <h3 className="text-xl font-bold text-foreground">独享套餐</h3>
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
-                        带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户⚠️
-                        共享用户请勿续费独享，否则链接将被锁定
+                        带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户
+                        {(clientData?.email || "").includes("共享") && (
+                          <span className="block text-destructive font-bold mt-1">⚠️ 您是共享用户，无法购买独享套餐</span>
+                        )}
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {dynamicPlans
