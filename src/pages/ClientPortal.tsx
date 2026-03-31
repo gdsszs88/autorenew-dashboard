@@ -428,6 +428,18 @@ export default function ClientPortal() {
           >
             <CreditCard className="w-5 h-5 mr-3" /> 在线续费
           </button>
+          <button
+            onClick={() => {
+              setTab("orders");
+              if (uuid && orders.length === 0) {
+                setOrdersLoading(true);
+                getOrders(uuid).then(setOrders).catch(() => {}).finally(() => setOrdersLoading(false));
+              }
+            }}
+            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "orders" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}
+          >
+            <Activity className="w-5 h-5 mr-3" /> 订单记录
+          </button>
         </div>
 
         <div className="md:col-span-3 bg-card rounded-2xl shadow-sm border border-border p-8">
