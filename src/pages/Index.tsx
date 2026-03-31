@@ -1,4 +1,4 @@
-import ClientPortal from "./ClientPortal";
+import LandingPage from "./LandingPage";
 
-const Index = () => <ClientPortal />;
+const Index = () => <LandingPage />;
 export default Index;
