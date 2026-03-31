@@ -38,6 +38,19 @@ interface ClientData {
   trafficTotal: number;
 }
 
+interface PlanItem {
+  id: string;
+  title: string;
+  category: string;
+  duration_months: number;
+  duration_days: number;
+  price: number;
+  description: string;
+  sort_order: number;
+  featured: boolean;
+  enabled: boolean;
+}
+
 export default function ClientPortal() {
   const [logged, setLogged] = useState(false);
   const [uuid, setUuid] = useState("");
