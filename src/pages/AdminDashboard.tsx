@@ -70,6 +70,7 @@ export default function AdminDashboard() {
   const [config, setConfig] = useState<AdminConfigData>(defaultConfig);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [saveStatus, setSaveStatus] = useState("");
+  const [btnStatus, setBtnStatus] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const token = sessionStorage.getItem("admin_token") || "";
