@@ -546,7 +546,7 @@ export default function AdminDashboard() {
                           <th className="py-3 px-2 font-semibold">支付方式</th>
                           <th className="py-3 px-2 font-semibold">状态</th>
                           <th className="py-3 px-2 font-semibold">时间</th>
-                        </tr>
+                          <th className="py-3 px-2 font-semibold">操作</th>
                       </thead>
                       <tbody>
                         {orders.map(order => (
