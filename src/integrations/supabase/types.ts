@@ -29,6 +29,7 @@ export type Database = {
           hupi_wechat_app_id: string | null
           hupi_wechat_app_secret: string | null
           id: string
+          notify_email: string
           panel_pass: string
           panel_url: string
           panel_user: string
@@ -42,6 +43,7 @@ export type Database = {
           price_shared_year: number
           price_year: number
           qq_qrcode_url: string
+          resend_api_key: string
           tawk_id: string
           telegram_link: string
           updated_at: string
@@ -61,6 +63,7 @@ export type Database = {
           hupi_wechat_app_id?: string | null
           hupi_wechat_app_secret?: string | null
           id?: string
+          notify_email?: string
           panel_pass?: string
           panel_url?: string
           panel_user?: string
@@ -74,6 +77,7 @@ export type Database = {
           price_shared_year?: number
           price_year?: number
           qq_qrcode_url?: string
+          resend_api_key?: string
           tawk_id?: string
           telegram_link?: string
           updated_at?: string
@@ -93,6 +97,7 @@ export type Database = {
           hupi_wechat_app_id?: string | null
           hupi_wechat_app_secret?: string | null
           id?: string
+          notify_email?: string
           panel_pass?: string
           panel_url?: string
           panel_user?: string
@@ -106,6 +111,7 @@ export type Database = {
           price_shared_year?: number
           price_year?: number
           qq_qrcode_url?: string
+          resend_api_key?: string
           tawk_id?: string
           telegram_link?: string
           updated_at?: string

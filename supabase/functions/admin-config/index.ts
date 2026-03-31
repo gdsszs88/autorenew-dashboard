@@ -78,6 +78,8 @@ Deno.serve(async (req) => {
         qqQrcodeUrl: data.qq_qrcode_url || "",
         telegramLink: data.telegram_link || "",
         videoEmbed: data.video_embed || "",
+        resendApiKey: data.resend_api_key || "",
+        notifyEmail: data.notify_email || "",
       };
 
       return new Response(JSON.stringify({ config: frontendConfig }), {
@@ -113,6 +115,8 @@ Deno.serve(async (req) => {
         qq_qrcode_url: config.qqQrcodeUrl,
         telegram_link: config.telegramLink,
         video_embed: config.videoEmbed,
+        resend_api_key: config.resendApiKey,
+        notify_email: config.notifyEmail,
       };
 
       const { error } = await supabase
