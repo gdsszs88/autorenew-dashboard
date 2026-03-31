@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Settings, Server, QrCode, Bitcoin, CheckCircle2, Plus, Trash2, Package } from "lucide-react";
+import { Settings, Server, QrCode, Bitcoin, CheckCircle2, Plus, Trash2, Package, ClipboardList, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan } from "@/lib/api";
+import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan, adminGetOrders } from "@/lib/api";
 
 interface AdminConfigData {
   panelUrl: string;
@@ -42,6 +42,24 @@ interface Plan {
   enabled: boolean;
 }
 
+interface Order {
+  id: string;
+  uuid: string;
+  plan_name: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  status: string;
+  created_at: string;
+  paid_at: string | null;
+  fulfilled_at: string | null;
+  email: string | null;
+  crypto_amount: number | null;
+  crypto_currency: string | null;
+  tx_hash: string | null;
+  months: number;
+}
+
 const defaultConfig: AdminConfigData = {
   panelUrl: "http://127.0.0.1:2053",
   panelUser: "admin",
@@ -73,6 +91,12 @@ export default function AdminDashboard() {
   const [saveStatus, setSaveStatus] = useState("");
   const [btnStatus, setBtnStatus] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersSearch, setOrdersSearch] = useState("");
+  const [ordersStatus, setOrdersStatus] = useState("all");
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const navigate = useNavigate();
   const token = sessionStorage.getItem("admin_token") || "";
 
@@ -101,6 +125,16 @@ export default function AdminDashboard() {
       const res = await adminGetPlans(token);
       if (res?.plans) setPlans(res.plans);
     } catch {}
+  };
+
+  const loadOrders = async (page = 1, search = ordersSearch, status = ordersStatus) => {
+    setOrdersLoading(true);
+    try {
+      const res = await adminGetOrders(token, { page, pageSize: 20, search: search || undefined, statusFilter: status });
+      if (res?.orders) setOrders(res.orders);
+      if (res?.total != null) setOrdersTotal(res.total);
+    } catch {}
+    setOrdersLoading(false);
   };
 
   const setBtnLoading = (key: string, text: string) => {
@@ -209,15 +243,18 @@ export default function AdminDashboard() {
 
         {/* Tab Menu */}
         <Tabs defaultValue="panel" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-12 bg-card border border-border rounded-2xl p-1">
-            <TabsTrigger value="panel" className="rounded-xl data-[state=active]:bg-admin-primary data-[state=active]:text-admin-primary-foreground font-bold">
-              <Server className="w-4 h-4 mr-2" /> 面板对接配置
+          <TabsList className="w-full grid grid-cols-4 h-12 bg-card border border-border rounded-2xl p-1">
+            <TabsTrigger value="panel" className="rounded-xl data-[state=active]:bg-admin-primary data-[state=active]:text-admin-primary-foreground font-bold text-xs sm:text-sm">
+              <Server className="w-4 h-4 mr-1 sm:mr-2" /> 面板对接
             </TabsTrigger>
-            <TabsTrigger value="payment" className="rounded-xl data-[state=active]:bg-warning data-[state=active]:text-warning-foreground font-bold">
-              <QrCode className="w-4 h-4 mr-2" /> 支付网关
+            <TabsTrigger value="payment" className="rounded-xl data-[state=active]:bg-warning data-[state=active]:text-warning-foreground font-bold text-xs sm:text-sm">
+              <QrCode className="w-4 h-4 mr-1 sm:mr-2" /> 支付网关
             </TabsTrigger>
-            <TabsTrigger value="products" className="rounded-xl data-[state=active]:bg-client-primary data-[state=active]:text-client-primary-foreground font-bold">
-              <Package className="w-4 h-4 mr-2" /> 商品管理
+            <TabsTrigger value="products" className="rounded-xl data-[state=active]:bg-client-primary data-[state=active]:text-client-primary-foreground font-bold text-xs sm:text-sm">
+              <Package className="w-4 h-4 mr-1 sm:mr-2" /> 商品管理
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-xl data-[state=active]:bg-accent data-[state=active]:text-accent-foreground font-bold text-xs sm:text-sm" onClick={() => { if (orders.length === 0) loadOrders(); }}>
+              <ClipboardList className="w-4 h-4 mr-1 sm:mr-2" /> 订单管理
             </TabsTrigger>
           </TabsList>
 
@@ -437,6 +474,137 @@ export default function AdminDashboard() {
                   <div className="text-center text-muted-foreground py-8">暂无套餐，点击上方"添加套餐"创建</div>
                 )}
               </div>
+            </div>
+          </TabsContent>
+
+          {/* 订单管理 */}
+          <TabsContent value="orders">
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-accent border-b border-border pb-3">
+                <ClipboardList className="w-5 h-5 mr-2" /> 订单管理
+              </h2>
+
+              {/* Search & Filter */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="搜索 UUID / 套餐名 / 邮箱..."
+                    value={ordersSearch}
+                    onChange={e => setOrdersSearch(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { setOrdersPage(1); loadOrders(1, ordersSearch, ordersStatus); } }}
+                    className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-accent outline-none text-sm"
+                  />
+                </div>
+                <select
+                  value={ordersStatus}
+                  onChange={e => { setOrdersStatus(e.target.value); setOrdersPage(1); loadOrders(1, ordersSearch, e.target.value); }}
+                  className="border border-input px-3 py-2 rounded-lg bg-background text-sm focus:ring-2 focus:ring-accent outline-none min-w-[120px]"
+                >
+                  <option value="all">全部状态</option>
+                  <option value="pending">待支付</option>
+                  <option value="paid">已支付</option>
+                  <option value="fulfilled">已完成</option>
+                  <option value="expired">已过期</option>
+                </select>
+                <button
+                  onClick={() => { setOrdersPage(1); loadOrders(1, ordersSearch, ordersStatus); }}
+                  className="bg-accent text-accent-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors text-sm"
+                >
+                  搜索
+                </button>
+              </div>
+
+              {ordersLoading ? (
+                <div className="text-center text-muted-foreground py-12">加载中...</div>
+              ) : orders.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12">暂无订单记录</div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-muted-foreground">
+                          <th className="py-3 px-2 font-semibold">UUID</th>
+                          <th className="py-3 px-2 font-semibold">套餐</th>
+                          <th className="py-3 px-2 font-semibold">金额</th>
+                          <th className="py-3 px-2 font-semibold">支付方式</th>
+                          <th className="py-3 px-2 font-semibold">状态</th>
+                          <th className="py-3 px-2 font-semibold">时间</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map(order => (
+                          <tr key={order.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                            <td className="py-3 px-2 font-mono text-xs max-w-[140px] truncate" title={order.uuid}>{order.uuid.slice(0, 8)}...</td>
+                            <td className="py-3 px-2">
+                              <span className="font-medium">{order.plan_name}</span>
+                              <span className="text-muted-foreground text-xs ml-1">({order.months}个月)</span>
+                            </td>
+                            <td className="py-3 px-2">
+                              {order.crypto_amount ? (
+                                <span>{order.crypto_amount} {order.crypto_currency}</span>
+                              ) : (
+                                <span>¥{order.amount}</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                order.payment_method === "wechat" ? "bg-success/10 text-success" :
+                                order.payment_method === "alipay" ? "bg-primary/10 text-primary" :
+                                "bg-accent/10 text-accent"
+                              }`}>
+                                {order.payment_method === "wechat" ? "微信" :
+                                 order.payment_method === "alipay" ? "支付宝" :
+                                 order.payment_method === "crypto_usdt" ? "USDT" :
+                                 order.payment_method === "crypto_trx" ? "TRX" : order.payment_method}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
+                                order.status === "fulfilled" ? "bg-success/10 text-success" :
+                                order.status === "paid" ? "bg-primary/10 text-primary" :
+                                order.status === "expired" ? "bg-destructive/10 text-destructive" :
+                                "bg-warning/10 text-warning"
+                              }`}>
+                                {order.status === "fulfilled" ? "✅ 已完成" :
+                                 order.status === "paid" ? "💰 已支付" :
+                                 order.status === "expired" ? "⏰ 已过期" : "⏳ 待支付"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(order.created_at).toLocaleString("zh-CN")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                    <span className="text-sm text-muted-foreground">共 {ordersTotal} 条记录</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { const p = ordersPage - 1; setOrdersPage(p); loadOrders(p); }}
+                        disabled={ordersPage <= 1}
+                        className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm font-medium px-2">第 {ordersPage} / {Math.max(1, Math.ceil(ordersTotal / 20))} 页</span>
+                      <button
+                        onClick={() => { const p = ordersPage + 1; setOrdersPage(p); loadOrders(p); }}
+                        disabled={ordersPage >= Math.ceil(ordersTotal / 20)}
+                        className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </TabsContent>
         </Tabs>

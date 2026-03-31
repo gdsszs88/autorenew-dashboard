@@ -90,6 +90,11 @@ export async function adminDeletePlan(token: string, planId: string) {
   return callEdgeFunction("admin-plans", { action: "delete", token, plan: { id: planId } });
 }
 
+// Admin orders
+export async function adminGetOrders(token: string, params?: { page?: number; pageSize?: number; search?: string; statusFilter?: string }) {
+  return callEdgeFunction("admin-orders", { action: "list", token, ...params });
+}
+
 // Get orders for a UUID
 export async function getOrders(uuid: string) {
   const { data, error } = await supabase
