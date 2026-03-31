@@ -252,11 +252,38 @@ export default function ClientPortal() {
     setTab("checkout");
   };
 
-  const handleSelectCrypto = (method: string) => {
+  const handleSelectCrypto = async (method: string) => {
     setSelectedMethod(method);
-    if (checkoutData) {
+    if (!checkoutData) return;
+
+    // Fetch exchange rates if not cached
+    if (!exchangeRates) {
+      setRatesLoading(true);
+      try {
+        const rates = await getExchangeRates();
+        if (rates?.usdtCny && rates?.trxCny) {
+          setExchangeRates({ usdtCny: rates.usdtCny, trxCny: rates.trxCny });
+          const rate = method === "usdt" ? rates.usdtCny : rates.trxCny;
+          const converted = checkoutData.price / rate;
+          // Add small random offset for unique amount matching
+          const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
+          setCryptoPrice(Number((converted + rand).toFixed(4)));
+        } else {
+          // Fallback: use price directly with offset
+          const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
+          setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
+        }
+      } catch {
+        const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
+        setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
+      } finally {
+        setRatesLoading(false);
+      }
+    } else {
+      const rate = method === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny;
+      const converted = checkoutData.price / rate;
       const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
-      setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
+      setCryptoPrice(Number((converted + rand).toFixed(4)));
     }
   };
 
