@@ -74,6 +74,9 @@ Deno.serve(async (req) => {
         priceSharedMonth: data.price_shared_month,
         priceSharedQuarter: data.price_shared_quarter,
         priceSharedYear: data.price_shared_year,
+        tawkId: data.tawk_id || "",
+        qqQrcodeUrl: data.qq_qrcode_url || "",
+        telegramLink: data.telegram_link || "",
       };
 
       return new Response(JSON.stringify({ config: frontendConfig }), {
@@ -105,6 +108,9 @@ Deno.serve(async (req) => {
         price_shared_month: config.priceSharedMonth,
         price_shared_quarter: config.priceSharedQuarter,
         price_shared_year: config.priceSharedYear,
+        tawk_id: config.tawkId,
+        qq_qrcode_url: config.qqQrcodeUrl,
+        telegram_link: config.telegramLink,
       };
 
       const { error } = await supabase

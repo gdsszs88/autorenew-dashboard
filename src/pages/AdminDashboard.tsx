@@ -27,6 +27,9 @@ interface AdminConfigData {
   cryptoKey: string;
   cryptoUsdt: boolean;
   cryptoTrx: boolean;
+  tawkId: string;
+  qqQrcodeUrl: string;
+  telegramLink: string;
 }
 
 interface Plan {
@@ -84,6 +87,9 @@ const defaultConfig: AdminConfigData = {
   cryptoKey: "",
   cryptoUsdt: true,
   cryptoTrx: true,
+  tawkId: "",
+  qqQrcodeUrl: "",
+  telegramLink: "",
 };
 
 export default function AdminDashboard() {
@@ -332,6 +338,40 @@ export default function AdminDashboard() {
                   <button onClick={() => handleSave("panel")} disabled={!!btnStatus["panel"]}
                     className="flex-1 bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md disabled:opacity-70">
                     {btnStatus["panel"] || "保存配置"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 悬浮按钮配置 */}
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border mt-6">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-admin-primary border-b border-border pb-3">
+                <Settings className="w-5 h-5 mr-2" /> 悬浮联系按钮配置
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">在线咨询 Tawk.to Widget ID</label>
+                  <input type="text" value={config.tawkId} onChange={e => setConfig({ ...config, tawkId: e.target.value })}
+                    placeholder="例如: 69c7635168a74a1c3a60f80a/1jkpdntv2"
+                    className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background" />
+                  <p className="text-xs text-muted-foreground mt-1">格式: 站点ID/Widget ID，从 Tawk.to 后台获取</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">QQ 客服二维码图片链接</label>
+                  <input type="text" value={config.qqQrcodeUrl} onChange={e => setConfig({ ...config, qqQrcodeUrl: e.target.value })}
+                    placeholder="https://example.com/qq-qrcode.png"
+                    className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Telegram 链接</label>
+                  <input type="text" value={config.telegramLink} onChange={e => setConfig({ ...config, telegramLink: e.target.value })}
+                    placeholder="https://t.me/your_username"
+                    className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background" />
+                </div>
+                <div className="pt-4">
+                  <button onClick={() => handleSave("fab")} disabled={!!btnStatus["fab"]}
+                    className="w-full bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md disabled:opacity-70">
+                    {btnStatus["fab"] || "保存悬浮按钮配置"}
                   </button>
                 </div>
               </div>

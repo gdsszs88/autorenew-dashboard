@@ -41,6 +41,9 @@ export type Database = {
           price_shared_quarter: number
           price_shared_year: number
           price_year: number
+          qq_qrcode_url: string
+          tawk_id: string
+          telegram_link: string
           updated_at: string
         }
         Insert: {
@@ -69,6 +72,9 @@ export type Database = {
           price_shared_quarter?: number
           price_shared_year?: number
           price_year?: number
+          qq_qrcode_url?: string
+          tawk_id?: string
+          telegram_link?: string
           updated_at?: string
         }
         Update: {
@@ -97,6 +103,9 @@ export type Database = {
           price_shared_quarter?: number
           price_shared_year?: number
           price_year?: number
+          qq_qrcode_url?: string
+          tawk_id?: string
+          telegram_link?: string
           updated_at?: string
         }
         Relationships: []
