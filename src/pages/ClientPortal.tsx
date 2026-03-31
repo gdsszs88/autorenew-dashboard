@@ -54,6 +54,24 @@ interface PlanItem {
   enabled: boolean;
 }
 
+function parseVideoEmbed(raw: string): string {
+  if (!raw || !raw.trim()) return "";
+  const s = raw.trim();
+  // Already an iframe
+  if (s.startsWith("<iframe")) return s;
+  // YouTube
+  const ytMatch = s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
+  if (ytMatch) return `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  // Bilibili
+  const biliMatch = s.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/);
+  if (biliMatch) return `<iframe src="https://player.bilibili.com/player.html?bvid=${biliMatch[1]}&high_quality=1" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  // Direct video link
+  if (/\.(mp4|webm|ogg)(\?|$)/i.test(s)) return `<video src="${s}" controls style="width:100%;border-radius:12px;"></video>`;
+  // Fallback: treat as iframe src
+  if (s.startsWith("http")) return `<iframe src="${s}" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  return "";
+}
+
 export default function ClientPortal() {
   const [logged, setLogged] = useState(false);
   const [uuid, setUuid] = useState("");
