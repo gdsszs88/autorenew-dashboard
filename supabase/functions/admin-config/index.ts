@@ -74,6 +74,9 @@ Deno.serve(async (req) => {
         priceSharedMonth: data.price_shared_month,
         priceSharedQuarter: data.price_shared_quarter,
         priceSharedYear: data.price_shared_year,
+        tawkId: data.tawk_id || "",
+        qqQrcodeUrl: data.qq_qrcode_url || "",
+        telegramLink: data.telegram_link || "",
       };
 
       return new Response(JSON.stringify({ config: frontendConfig }), {
