@@ -110,6 +110,12 @@ export default function ClientPortal() {
     getPlans()
       .then(setDynamicPlans)
       .catch(() => {});
+    // Fetch video embed
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.from("admin_config").select("video_embed").limit(1).single().then(({ data }) => {
+        if (data?.video_embed) setVideoEmbed(data.video_embed);
+      });
+    });
     // Load jsQR
     if (!(window as any).jsQR) {
       const s = document.createElement("script");
