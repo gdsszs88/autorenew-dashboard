@@ -220,18 +220,59 @@ Deno.serve(async (req) => {
       }).eq("id", order.id);
 
       // Extend expiry via 3x-ui
+      let clientRemark = "";
+      let fulfilled = false;
       const cookie = await login3xui(config.panel_url, config.panel_user, config.panel_pass);
       if (cookie) {
         const client = await findClient(config.panel_url, cookie, order.uuid);
         if (client) {
+          clientRemark = client.email || "";
           const success = await extendExpiry(config.panel_url, cookie, client.inboundId, client.email, client.expiryTime, order.months);
           if (success) {
             await supabase.from("orders").update({ status: "fulfilled", fulfilled_at: new Date().toISOString() }).eq("id", order.id);
-            return new Response(JSON.stringify({ success: true, status: "fulfilled", txHash: result.txHash }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
+            fulfilled = true;
           }
         }
+      }
+
+      // Send email notification via Resend
+      if (config.resend_api_key && config.notify_email) {
+        try {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${config.resend_api_key}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "通知 <onboarding@resend.dev>",
+              to: [config.notify_email],
+              subject: `💰 加密货币支付成功 - ${order.plan_name}`,
+              html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                <h2 style="color:#10b981;">💰 加密货币支付成功通知</h2>
+                <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">订单ID</td><td style="padding:8px;border:1px solid #e5e7eb;">${order.id}</td></tr>
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">UUID</td><td style="padding:8px;border:1px solid #e5e7eb;">${order.uuid}</td></tr>
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">用户备注</td><td style="padding:8px;border:1px solid #e5e7eb;">${clientRemark || "未找到"}</td></tr>
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">套餐</td><td style="padding:8px;border:1px solid #e5e7eb;">${order.plan_name}</td></tr>
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">币种</td><td style="padding:8px;border:1px solid #e5e7eb;">${order.crypto_currency}</td></tr>
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">金额</td><td style="padding:8px;border:1px solid #e5e7eb;">${order.crypto_amount} ${order.crypto_currency}</td></tr>
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">TX Hash</td><td style="padding:8px;border:1px solid #e5e7eb;word-break:break-all;">${result.txHash || ""}</td></tr>
+                  <tr><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;background:#f9fafb;">续期状态</td><td style="padding:8px;border:1px solid #e5e7eb;">${fulfilled ? "✅ 已续期" : "❌ 续期失败"}</td></tr>
+                </table>
+                <p style="color:#6b7280;font-size:12px;">此邮件由系统自动发送</p>
+              </div>`,
+            }),
+          });
+        } catch (emailErr) {
+          console.error("Failed to send email notification:", emailErr);
+        }
+      }
+
+      if (fulfilled) {
+        return new Response(JSON.stringify({ success: true, status: "fulfilled", txHash: result.txHash }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       return new Response(JSON.stringify({ success: true, status: "paid_unfulfilled", txHash: result.txHash, message: "支付已确认，但续期操作失败，请联系站长" }), {
