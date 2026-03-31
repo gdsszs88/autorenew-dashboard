@@ -44,8 +44,8 @@ export default function LandingPage() {
     <>
       <style>{`
         .landing-page {
-          --lp-primary: #2b7a3b;
-          --lp-primary-hover: #22632f;
+          --lp-primary: #34d058;
+          --lp-primary-hover: #2ea44f;
           --lp-bg: #f4f7f6;
           --lp-text-dark: #2c3e50;
           --lp-text-gray: #546e7a;
@@ -56,49 +56,75 @@ export default function LandingPage() {
           line-height: 1.6;
           overflow-x: hidden;
         }
+        .dark .landing-page {
+          --lp-primary: #3fb950;
+          --lp-primary-hover: #2ea043;
+          --lp-bg: #0d1117;
+          --lp-text-dark: #e6edf3;
+          --lp-text-gray: #8b949e;
+          --lp-card-bg: #161b22;
+        }
         .landing-page * { margin: 0; padding: 0; box-sizing: border-box; }
         .lp-header { background-color: var(--lp-card-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 5%; display: flex; align-items: center; justify-content: center; position: sticky; top: 0; z-index: 100; }
+        .dark .lp-header { box-shadow: 0 2px 10px rgba(0,0,0,0.3); border-bottom: 1px solid #21262d; }
         .lp-logo { font-size: 1.5rem; font-weight: 800; color: var(--lp-primary); text-decoration: none; display: flex; align-items: center; gap: 10px; position: absolute; left: 5%; }
         .lp-logo-icon { width: 32px; height: 32px; background-color: var(--lp-primary); color: white; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 18px; }
+        .dark .lp-logo-icon { color: #0d1117; }
         .lp-nav-link { display: inline-block; padding: 15px 36px; background-color: var(--lp-primary); color: white; text-decoration: none; border-radius: 30px; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 12px rgba(43,122,59,0.3); transition: all 0.3s ease; }
+        .dark .lp-nav-link { color: #0d1117; box-shadow: 0 4px 20px rgba(63,185,80,0.3); }
         .lp-nav-link:hover { background-color: var(--lp-primary-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43,122,59,0.4); }
         .lp-hero { display: flex; align-items: center; justify-content: space-between; padding: 80px 5%; max-width: 1400px; margin: 0 auto; gap: 50px; }
         .lp-hero-content { flex: 1; max-width: 600px; }
         .lp-tagline { display: inline-block; background-color: rgba(43,122,59,0.1); color: var(--lp-primary); padding: 6px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; margin-bottom: 20px; }
-        .lp-hero h1 { font-size: 3rem; line-height: 1.2; margin-bottom: 24px; color: #1a202c; }
+        .dark .lp-tagline { background-color: rgba(63,185,80,0.15); }
+        .lp-hero h1 { font-size: 3rem; line-height: 1.2; margin-bottom: 24px; color: var(--lp-text-dark); }
         .lp-hero h1 span { color: #e53e3e; }
+        .dark .lp-hero h1 span { color: #f85149; }
         .lp-hero p { font-size: 1.15rem; color: var(--lp-text-gray); margin-bottom: 15px; }
         .lp-hero-features { list-style: none; margin: 25px 0; padding: 0; }
         .lp-hero-features li { position: relative; padding-left: 30px; margin-bottom: 12px; font-size: 1.05rem; color: var(--lp-text-dark); }
         .lp-hero-features li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--lp-primary); font-weight: bold; font-size: 1.2rem; }
         .lp-hero-image { flex: 1; text-align: right; }
         .lp-hero-image img { max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 8px solid white; transform: rotate(2deg); transition: transform 0.3s ease; }
+        .dark .lp-hero-image img { border-color: #21262d; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
         .lp-hero-image img:hover { transform: rotate(0deg) scale(1.02); }
         .lp-supported { text-align: center; padding: 40px 5%; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+        .dark .lp-supported { background: #161b22; border-color: #21262d; }
         .lp-supported h2 { font-size: 1.1rem; color: #718096; font-weight: 600; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .dark .lp-supported h2 { color: #8b949e; }
         .lp-model-tags { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
         .lp-model-tag { background: white; padding: 10px 25px; border-radius: 30px; font-weight: bold; color: #4a5568; box-shadow: 0 2px 10px rgba(0,0,0,0.05); font-size: 1.1rem; }
+        .dark .lp-model-tag { background: #21262d; color: #c9d1d9; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .lp-features-section { background-color: white; padding: 80px 5%; }
-        .lp-section-title { text-align: center; font-size: 2.2rem; margin-bottom: 50px; color: #1a202c; }
+        .dark .lp-features-section { background-color: #0d1117; }
+        .lp-section-title { text-align: center; font-size: 2.2rem; margin-bottom: 50px; color: var(--lp-text-dark); }
         .lp-features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1200px; margin: 0 auto; }
         .lp-feature-card { background: var(--lp-bg); padding: 40px 30px; border-radius: 16px; text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid #e2e8f0; }
+        .dark .lp-feature-card { background: #161b22; border-color: #21262d; }
         .lp-feature-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); background: white; border-color: var(--lp-primary); }
+        .dark .lp-feature-card:hover { background: #1c2128; box-shadow: 0 15px 30px rgba(0,0,0,0.3); }
         .lp-feature-icon { width: 70px; height: 70px; background-color: rgba(43,122,59,0.1); color: var(--lp-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+        .dark .lp-feature-icon { background-color: rgba(63,185,80,0.15); }
         .lp-feature-icon svg { width: 35px; height: 35px; }
-        .lp-feature-card h3 { font-size: 1.4rem; margin-bottom: 15px; color: #2d3748; }
+        .lp-feature-card h3 { font-size: 1.4rem; margin-bottom: 15px; color: var(--lp-text-dark); }
         .lp-feature-card p { color: var(--lp-text-gray); font-size: 1rem; }
         .lp-seo-section { padding: 60px 5%; background-color: var(--lp-bg); max-width: 1000px; margin: 0 auto; }
-        .lp-seo-title { text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: #1a202c; }
+        .lp-seo-title { text-align: center; font-size: 1.8rem; margin-bottom: 30px; color: var(--lp-text-dark); }
         .lp-faq-item { background: white; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid #e2e8f0; }
-        .lp-faq-question { padding: 20px; font-size: 1.1rem; font-weight: 600; color: #2d3748; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.3s; }
+        .dark .lp-faq-item { background: #161b22; border-color: #21262d; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .lp-faq-question { padding: 20px; font-size: 1.1rem; font-weight: 600; color: var(--lp-text-dark); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.3s; }
         .lp-faq-question:hover { background-color: #f8fafc; }
+        .dark .lp-faq-question:hover { background-color: #1c2128; }
         .lp-faq-icon { width: 20px; height: 20px; transition: transform 0.3s ease; fill: var(--lp-text-gray); }
         .lp-faq-item.active .lp-faq-icon { transform: rotate(180deg); fill: var(--lp-primary); }
         .lp-faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; background-color: white; }
+        .dark .lp-faq-answer { background-color: #161b22; }
         .lp-faq-answer-inner { padding: 0 20px 20px; color: var(--lp-text-gray); line-height: 1.7; font-size: 1rem; border-top: 1px dashed #e2e8f0; margin-top: 10px; padding-top: 15px; }
+        .dark .lp-faq-answer-inner { border-top-color: #21262d; }
         .lp-faq-answer-inner p { margin-bottom: 10px; }
         .lp-faq-item.active .lp-faq-answer { max-height: 500px; }
         .lp-footer { text-align: center; padding: 40px 20px; background-color: #1a202c; color: #a0aec0; }
+        .dark .lp-footer { background-color: #010409; color: #8b949e; }
         @media (max-width: 992px) {
           .lp-features-grid { grid-template-columns: repeat(2, 1fr); }
           .lp-hero { flex-direction: column-reverse; text-align: center; padding: 40px 5%; }
