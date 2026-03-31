@@ -8,6 +8,7 @@ import ClientPortal from "./pages/ClientPortal";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import FloatingButtons from "./components/FloatingButtons";
 
 const queryClient = new QueryClient();
 

@@ -240,38 +240,6 @@ export default function LandingPage() {
           <p style={{ marginTop: "10px", fontSize: "0.85rem", color: "#718096" }}>合规经营，符合国家网络安全规范 | 专业解决 AI 降智、防跨境电商限流</p>
         </footer>
 
-        {/* FAB buttons */}
-        <div className="lp-fab-container" id="contact">
-          <button
-            className="lp-fab chat"
-            onClick={() => {
-              const api = (window as any).Tawk_API;
-              if (api && typeof api.maximize === "function") api.maximize();
-            }}
-          >
-            <span className="lp-fab-tooltip">在线咨询</span>
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 3c5.5 0 10 3.58 10 8s-4.5 8-10 8c-1.24 0-2.43-.2-3.53-.55C6.15 19.88 3.5 20.5 3.5 20.5s.8-2.3.96-3.41C3.18 15.69 2 13.96 2 11c0-4.42 4.5-8 10-8z" />
-            </svg>
-          </button>
-
-          <a href="javascript:void(0);" className="lp-fab qq">
-            <div className="lp-qr-popup">
-              <img src="https://free.picui.cn/free/2026/01/15/6968e65e9a443.png" alt="QQ客服二维码" />
-              <span className="qr-text">扫码添加QQ客服</span>
-            </div>
-            <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-              <path d="M824.8 613.2c-16-51.4-34.4-94.6-62.7-165.3C766.5 262.2 689.3 112 511.5 112 331.7 112 256.2 265.2 261 447.9c-28.4 70.8-46.7 113.7-62.7 165.3-34 109.5-23 154.8-14.6 155.8 18 2.2 70.1-82.4 70.1-82.4 0 49 25.2 112.9 79.8 159-26.4 8.1-85.7 29.9-71.6 53.8 11.4 19.3 196.2 12.3 249.5 6.3 53.3 6 238.1 13 249.5-6.3 14.1-23.8-45.3-45.7-71.6-53.8 54.6-46.2 79.8-110.1 79.8-159 0 0 52.1 84.6 70.1 82.4 8.5-1.1 19.5-46.4-14.5-155.8z" />
-            </svg>
-          </a>
-
-          <a href="https://t.me/zhenghongcheng" className="lp-fab tg" target="_blank" rel="noopener noreferrer">
-            <span className="lp-fab-tooltip">点击Telegram联系</span>
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.84 1.18-5.2 3.45-.49.34-.94.5-1.35.49-.45-.01-1.32-.26-1.96-.47-.79-.26-1.42-.39-1.36-.83.03-.22.34-.45.93-.69 3.63-1.58 6.06-2.63 7.28-3.13 3.47-1.43 4.19-1.68 4.66-1.69.1 0 .34.02.49.13.12.1.16.23.18.33.01.07.02.16.02.21z" />
-            </svg>
-          </a>
-        </div>
       </div>
     </>
   );

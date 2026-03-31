@@ -410,8 +410,12 @@ export default function ClientPortal() {
   return (
     <div className="bg-muted min-h-screen text-foreground">
       <nav className="bg-card shadow-sm px-6 py-4 flex justify-between items-center border-b border-border">
-        <div className="flex items-center text-client-primary font-bold text-xl">
-          <Activity className="mr-2" /> 自助服务中心
+        <div className="flex items-center gap-4">
+          <Link to="/" className="text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
+          <span className="text-border">|</span>
+          <div className="flex items-center text-client-primary font-bold text-xl">
+            <Activity className="mr-2" /> 自助服务中心
+          </div>
         </div>
         <button
           onClick={() => setLogged(false)}
