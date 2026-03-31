@@ -495,9 +495,17 @@ export default function ClientPortal() {
                 </div>
               ) : (
                 <div className="space-y-10">
+                  {(() => {
+                    const email = clientData?.email || "";
+                    const isExclusive = email.includes("独享");
+                    const isShared = email.includes("共享");
+                    const exclusiveDisabled = isShared;
+                    const sharedDisabled = isExclusive;
+                    return null;
+                  })()}
                   {/* 独享分组 */}
                   {dynamicPlans.filter((p) => p.category === "exclusive").length > 0 && (
-                    <div>
+                    <div className={`${(clientData?.email || "").includes("共享") ? "opacity-50 grayscale pointer-events-none" : ""}`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-lg">🔒</span>
                         <h3 className="text-xl font-bold text-foreground">独享套餐</h3>
