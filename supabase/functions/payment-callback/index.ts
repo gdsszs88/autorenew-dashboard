@@ -282,19 +282,20 @@ async function extendExpiry(panelUrl: string, cookie: string, inboundId: number,
 
   const inbound = inboundData.obj;
   const settings = JSON.parse(inbound.settings || "{}");
-  const clients = settings.clients || [];
   
+  // Search in both clients (VMESS/VLESS) and accounts (SOCKS5)
   let found = false;
-  for (const client of clients) {
-    if (client.email === email) {
-      client.expiryTime = newExpiry;
-      found = true;
-      break;
+  for (const list of [settings.clients || [], settings.accounts || []]) {
+    for (const entry of list) {
+      const entryEmail = entry.email || entry.user || entry.username || "";
+      if (entryEmail === email) {
+        entry.expiryTime = newExpiry;
+        found = true;
+        break;
+      }
     }
+    if (found) break;
   }
-  if (!found) return false;
-
-  settings.clients = clients;
 
   // Update the inbound with new settings
   const formData = new URLSearchParams();
