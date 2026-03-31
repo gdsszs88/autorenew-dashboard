@@ -407,6 +407,35 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+
+            {/* 邮件通知配置 */}
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border mt-6">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-admin-primary border-b border-border pb-3">
+                <Settings className="w-5 h-5 mr-2" /> 支付成功邮件通知 (Resend)
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Resend API Key</label>
+                  <input type="password" value={config.resendApiKey} onChange={e => setConfig({ ...config, resendApiKey: e.target.value })}
+                    placeholder="re_xxxxxxxxx"
+                    className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background" />
+                  <p className="text-xs text-muted-foreground mt-1">从 resend.com → API Keys 获取</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">通知接收邮箱</label>
+                  <input type="email" value={config.notifyEmail} onChange={e => setConfig({ ...config, notifyEmail: e.target.value })}
+                    placeholder="admin@example.com"
+                    className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background" />
+                  <p className="text-xs text-muted-foreground mt-1">支付成功后邮件将发送到此邮箱</p>
+                </div>
+                <div className="pt-4">
+                  <button onClick={() => handleSave("resend")} disabled={!!btnStatus["resend"]}
+                    className="w-full bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md disabled:opacity-70">
+                    {btnStatus["resend"] || "保存邮件通知配置"}
+                  </button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           {/* 支付网关 */}

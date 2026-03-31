@@ -428,6 +428,7 @@ Deno.serve(async (req) => {
       }).eq("id", order.id);
 
       // Extend expiry via 3x-ui
+      let finalStatus = "paid";
       const cookie = await login3xui(config.panel_url, config.panel_user, config.panel_pass);
       if (cookie) {
         const client = await findClient(config.panel_url, cookie, order.uuid);
@@ -435,9 +436,47 @@ Deno.serve(async (req) => {
           const success = await extendExpiry(config.panel_url, cookie, client.inboundId, client.email, client.expiryTime, order.months, client.isSocks5);
           if (success) {
             await supabase.from("orders").update({ status: "fulfilled", fulfilled_at: new Date().toISOString() }).eq("id", order.id);
+            finalStatus = "fulfilled";
           } else {
             await supabase.from("orders").update({ status: "paid_unfulfilled" }).eq("id", order.id);
+            finalStatus = "paid_unfulfilled";
           }
+        }
+      }
+
+      // Send email notification via Resend
+      if (config.resend_api_key && config.notify_email) {
+        try {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${config.resend_api_key}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "通知 <onboarding@resend.dev>",
+              to: [config.notify_email],
+              subject: `💰 支付成功通知 - ${order.plan_name}`,
+              html: `
+                <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                  <h2 style="color:#10b981;">✅ 用户支付成功</h2>
+                  <table style="width:100%;border-collapse:collapse;margin-top:16px;">
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">订单号</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">${order.trade_no || order.id}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">用户UUID</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.uuid}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">套餐</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.plan_name}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">金额</td><td style="padding:8px;border-bottom:1px solid #eee;">¥${order.amount}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">时长</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.months} 个月</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">支付方式</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.payment_method}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">续费状态</td><td style="padding:8px;border-bottom:1px solid #eee;">${finalStatus === 'fulfilled' ? '✅ 已续费' : '⚠️ 待处理'}</td></tr>
+                    <tr><td style="padding:8px;color:#666;">时间</td><td style="padding:8px;">${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</td></tr>
+                  </table>
+                </div>
+              `,
+            }),
+          });
+          console.log("Resend email sent successfully");
+        } catch (emailErr) {
+          console.error("Resend email failed:", emailErr);
         }
       }
 
