@@ -70,10 +70,10 @@ export default function LandingPage() {
           overflow-x: hidden;
         }
         .landing-page * { margin: 0; padding: 0; box-sizing: border-box; }
-        .lp-header { background-color: var(--lp-card-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 5%; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .lp-logo { font-size: 1.5rem; font-weight: 800; color: var(--lp-primary); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+        .lp-header { background-color: var(--lp-card-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 5%; display: flex; align-items: center; justify-content: center; position: sticky; top: 0; z-index: 100; }
+        .lp-logo { font-size: 1.5rem; font-weight: 800; color: var(--lp-primary); text-decoration: none; display: flex; align-items: center; gap: 10px; position: absolute; left: 5%; }
         .lp-logo-icon { width: 32px; height: 32px; background-color: var(--lp-primary); color: white; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 18px; }
-        .lp-nav-link { display: inline-block; padding: 10px 24px; background-color: var(--lp-primary); color: white; text-decoration: none; border-radius: 30px; font-size: 1rem; font-weight: 700; box-shadow: 0 4px 12px rgba(43,122,59,0.3); transition: all 0.3s ease; }
+        .lp-nav-link { display: inline-block; padding: 15px 36px; background-color: var(--lp-primary); color: white; text-decoration: none; border-radius: 30px; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 12px rgba(43,122,59,0.3); transition: all 0.3s ease; }
         .lp-nav-link:hover { background-color: var(--lp-primary-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43,122,59,0.4); }
         .lp-hero { display: flex; align-items: center; justify-content: space-between; padding: 80px 5%; max-width: 1400px; margin: 0 auto; gap: 50px; }
         .lp-hero-content { flex: 1; max-width: 600px; }
