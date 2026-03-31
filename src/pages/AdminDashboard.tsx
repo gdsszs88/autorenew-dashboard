@@ -418,8 +418,9 @@ export default function AdminDashboard() {
                 客户使用虚拟货币付款时，系统会自动在原价基础上加上 <b>0.001 - 0.0019</b> 的随机尾数以唯一标识订单。
               </div>
             </div>
-            <button onClick={handleSave} className="w-full bg-accent text-accent-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center mt-4">
-              <CheckCircle2 className="w-5 h-5 mr-2" /> 保存加密货币配置
+            <button onClick={() => handleSave("crypto")} disabled={!!btnStatus["crypto"]}
+              className="w-full bg-accent text-accent-foreground py-3 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md flex justify-center items-center mt-4 disabled:opacity-70">
+              <CheckCircle2 className="w-5 h-5 mr-2" /> {btnStatus["crypto"] || "保存加密货币配置"}
             </button>
           </div>
         </div>
