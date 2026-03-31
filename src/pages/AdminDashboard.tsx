@@ -281,9 +281,9 @@ export default function AdminDashboard() {
                     </label>
                   </div>
                   <div className="md:col-span-2 flex items-end gap-2">
-                    <button onClick={() => handleUpdatePlan(plan)}
-                      className="bg-success text-success-foreground px-3 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-colors">
-                      保存
+                    <button onClick={() => handleUpdatePlan(plan)} disabled={!!btnStatus[`save-${plan.id}`]}
+                      className="bg-success text-success-foreground px-3 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-colors disabled:opacity-70 min-w-[60px]">
+                      {btnStatus[`save-${plan.id}`] || "保存"}
                     </button>
                     <button onClick={() => handleDeletePlan(plan.id)}
                       className="bg-destructive/10 text-destructive px-3 py-2 rounded-lg text-xs font-bold hover:bg-destructive/20 transition-colors">
