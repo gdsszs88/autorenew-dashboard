@@ -418,12 +418,15 @@ export default function ClientPortal() {
             <Activity className="mr-2" /> 自助服务中心
           </div>
         </div>
-        <button
-          onClick={() => setLogged(false)}
-          className="text-muted-foreground hover:text-foreground flex items-center text-sm font-medium"
-        >
-          <LogOut className="w-4 h-4 mr-1" /> 退出
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setLogged(false)}
+            className="text-muted-foreground hover:text-foreground flex items-center text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4 mr-1" /> 退出
+          </button>
+          <ThemeToggle />
+        </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-4 gap-8">
