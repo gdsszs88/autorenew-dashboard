@@ -15,7 +15,16 @@ import {
   QrCode,
   Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment, getPlans, getOrders, getExchangeRates } from "@/lib/api";
+import {
+  getPublicConfig,
+  lookupClient,
+  createOrder,
+  checkOrderStatus,
+  verifyCryptoPayment,
+  getPlans,
+  getOrders,
+  getExchangeRates,
+} from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
@@ -61,14 +70,18 @@ function parseVideoEmbed(raw: string): string {
   if (s.startsWith("<iframe")) return s;
   // YouTube
   const ytMatch = s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
-  if (ytMatch) return `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  if (ytMatch)
+    return `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
   // Bilibili
   const biliMatch = s.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/);
-  if (biliMatch) return `<iframe src="https://player.bilibili.com/player.html?bvid=${biliMatch[1]}&high_quality=1" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  if (biliMatch)
+    return `<iframe src="https://player.bilibili.com/player.html?bvid=${biliMatch[1]}&high_quality=1" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
   // Direct video link
-  if (/\.(mp4|webm|ogg)(\?|$)/i.test(s)) return `<video src="${s}" controls style="width:100%;border-radius:12px;"></video>`;
+  if (/\.(mp4|webm|ogg)(\?|$)/i.test(s))
+    return `<video src="${s}" controls style="width:100%;border-radius:12px;"></video>`;
   // Fallback: treat as iframe src
-  if (s.startsWith("http")) return `<iframe src="${s}" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  if (s.startsWith("http"))
+    return `<iframe src="${s}" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
   return "";
 }
 
@@ -114,9 +127,14 @@ export default function ClientPortal() {
       .catch(() => {});
     // Fetch video embed
     import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.from("admin_config").select("video_embed").limit(1).single().then(({ data }) => {
-        if (data?.video_embed) setVideoEmbed(data.video_embed);
-      });
+      supabase
+        .from("admin_config")
+        .select("video_embed")
+        .limit(1)
+        .single()
+        .then(({ data }) => {
+          if (data?.video_embed) setVideoEmbed(data.video_embed);
+        });
     });
     // Load jsQR
     if (!(window as any).jsQR) {
@@ -132,7 +150,10 @@ export default function ClientPortal() {
     if (!trimmed) return null;
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     // Try each line (user may paste multi-line content)
-    const lines = trimmed.split(/\n/).map(l => l.trim()).filter(Boolean);
+    const lines = trimmed
+      .split(/\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
     for (const line of lines) {
       if (uuidRegex.test(line)) return line;
       try {
@@ -199,7 +220,7 @@ export default function ClientPortal() {
     e.preventDefault();
     const extracted = extractIdentifier(loginInput);
     if (!extracted) {
-      setError("请输入 UUID、节点链接或 SOCKS5 用户名/密码。");
+      setError("请输入 UUID、链接或 SOCKS5 用户名/密码。");
       return;
     }
     setUuid(extracted);
@@ -216,7 +237,7 @@ export default function ClientPortal() {
         });
         setLogged(true);
       } else {
-        setError(res?.error || "未找到该 UUID 对应的节点");
+        setError(res?.error || "未找到该 UUID 对应的ID");
       }
     } catch {
       setError("查询失败，请重试");
@@ -405,14 +426,23 @@ export default function ClientPortal() {
   if (!logged) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-muted p-4 relative">
-        <Link to="/" className="absolute top-4 left-4 text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
-        <div className="absolute top-4 right-4"><ThemeToggle /></div>
-        <div className={`flex items-stretch gap-6 w-full ${videoHtml ? 'max-w-4xl flex-col md:flex-row' : 'max-w-md flex-col'}`}>
+        <Link
+          to="/"
+          className="absolute top-4 left-4 text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity"
+        >
+          首页
+        </Link>
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
+        <div
+          className={`flex items-stretch gap-6 w-full ${videoHtml ? "max-w-4xl flex-col md:flex-row" : "max-w-md flex-col"}`}
+        >
           {/* Login card */}
-          <div className={`bg-card rounded-2xl shadow-xl overflow-hidden ${videoHtml ? 'md:w-1/2 w-full' : 'w-full'}`}>
+          <div className={`bg-card rounded-2xl shadow-xl overflow-hidden ${videoHtml ? "md:w-1/2 w-full" : "w-full"}`}>
             <div className="bg-client-primary p-8 text-center">
               <User className="w-16 h-16 text-client-primary-foreground mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-client-primary-foreground mb-2">节点自助服务中心</h1>
+              <h1 className="text-2xl font-bold text-client-primary-foreground mb-2">充值续费自助服务中心</h1>
               <p className="text-client-primary-foreground/80 text-sm">支持直接粘贴链接 或 扫码识别</p>
             </div>
             <div className="p-8">
@@ -429,7 +459,9 @@ export default function ClientPortal() {
                     required
                   />
                   <div className="absolute bottom-3 right-3 flex items-center space-x-3">
-                    {qrStatus && <span className="text-xs font-bold text-client-primary animate-pulse">{qrStatus}</span>}
+                    {qrStatus && (
+                      <span className="text-xs font-bold text-client-primary animate-pulse">{qrStatus}</span>
+                    )}
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -481,7 +513,9 @@ export default function ClientPortal() {
     <div className="bg-muted min-h-screen text-foreground">
       <nav className="bg-card shadow-sm px-6 py-4 flex justify-between items-center border-b border-border">
         <div className="flex items-center gap-4">
-          <Link to="/" className="text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
+          <Link to="/" className="text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">
+            首页
+          </Link>
           <span className="text-border">|</span>
           <div className="flex items-center text-client-primary font-bold text-xl">
             <Activity className="mr-2" /> 自助服务中心
@@ -520,7 +554,10 @@ export default function ClientPortal() {
               setTab("orders");
               if (uuid && orders.length === 0) {
                 setOrdersLoading(true);
-                getOrders(uuid).then(setOrders).catch(() => {}).finally(() => setOrdersLoading(false));
+                getOrders(uuid)
+                  .then(setOrders)
+                  .catch(() => {})
+                  .finally(() => setOrdersLoading(false));
               }
             }}
             className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "orders" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}
@@ -586,7 +623,7 @@ export default function ClientPortal() {
                 <div className="bg-success/10 border border-success/20 p-8 rounded-2xl text-center">
                   <CheckCircle2 className="w-16 h-16 text-success mx-auto mb-4" />
                   <h3 className="text-2xl font-bold mb-2">续费成功！</h3>
-                  <p className="text-muted-foreground mb-6">您的节点数据已实时同步至后台，流量已重置。</p>
+                  <p className="text-muted-foreground mb-6">您的数据已实时同步至后台，流量已重置。</p>
                   <button
                     onClick={() => setTab("dashboard")}
                     className="bg-success text-success-foreground font-bold px-8 py-3 rounded-xl hover:opacity-90 transition-colors shadow-lg"
@@ -606,7 +643,9 @@ export default function ClientPortal() {
                   })()}
                   {/* 独享分组 */}
                   {dynamicPlans.filter((p) => p.category === "exclusive").length > 0 && (
-                    <div className={`${(clientData?.email || "").includes("共享") ? "opacity-50 grayscale pointer-events-none" : ""}`}>
+                    <div
+                      className={`${(clientData?.email || "").includes("共享") ? "opacity-50 grayscale pointer-events-none" : ""}`}
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-lg">🔒</span>
                         <h3 className="text-xl font-bold text-foreground">独享套餐</h3>
@@ -614,7 +653,9 @@ export default function ClientPortal() {
                       <p className="text-sm text-muted-foreground mb-4">
                         带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户
                         {(clientData?.email || "").includes("共享") && (
-                          <span className="block text-destructive font-bold mt-1">⚠️ 您是共享用户，无法购买独享套餐</span>
+                          <span className="block text-destructive font-bold mt-1">
+                            ⚠️ 您是共享用户，无法购买独享套餐
+                          </span>
                         )}
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -666,7 +707,9 @@ export default function ClientPortal() {
 
                   {/* 共享分组 */}
                   {dynamicPlans.filter((p) => p.category === "shared").length > 0 && (
-                    <div className={`${(clientData?.email || "").includes("独享") ? "opacity-50 grayscale pointer-events-none" : ""}`}>
+                    <div
+                      className={`${(clientData?.email || "").includes("独享") ? "opacity-50 grayscale pointer-events-none" : ""}`}
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-lg">👥</span>
                         <h3 className="text-xl font-bold text-foreground">共享套餐</h3>
@@ -674,7 +717,9 @@ export default function ClientPortal() {
                       <p className="text-sm text-muted-foreground mb-4">
                         多人共用线路，价格更实惠，适合日常轻度使用
                         {(clientData?.email || "").includes("独享") && (
-                          <span className="block text-destructive font-bold mt-1">⚠️ 您是独享用户，无法购买共享套餐</span>
+                          <span className="block text-destructive font-bold mt-1">
+                            ⚠️ 您是独享用户，无法购买共享套餐
+                          </span>
                         )}
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -870,7 +915,8 @@ export default function ClientPortal() {
                           </div>
                           {exchangeRates && (
                             <p className="text-xs text-muted-foreground mb-2">
-                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥{(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
+                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥
+                              {(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
                             </p>
                           )}
                           <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
@@ -905,7 +951,8 @@ export default function ClientPortal() {
                           </div>
                           {exchangeRates && (
                             <p className="text-xs text-muted-foreground mb-2">
-                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥{(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
+                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥
+                              {(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
                             </p>
                           )}
                           <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
@@ -932,24 +979,11 @@ export default function ClientPortal() {
                             ✅ 订单已创建，请扫码支付
                           </div>
                           {qrCodeUrl ? (
-                            <div className="mb-4">
-                              <img
-                                src={qrCodeUrl}
-                                alt="支付二维码"
-                                className="w-48 h-48 mx-auto rounded-xl border border-border"
-                              />
-                              {selectedMethod === "alipay" && payUrl && (
-                                <a
-                                  href={payUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center justify-center gap-2 mt-3 bg-[#1677FF] text-white font-bold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
-                                >
-                                  <Smartphone className="w-4 h-4" />
-                                  手机浏览器点此跳转支付宝支付
-                                </a>
-                              )}
-                            </div>
+                            <img
+                              src={qrCodeUrl}
+                              alt="支付二维码"
+                              className="w-48 h-48 mx-auto mb-4 rounded-xl border border-border"
+                            />
                           ) : payUrl ? (
                             <div className="mb-4">
                               <a
@@ -1001,27 +1035,41 @@ export default function ClientPortal() {
                     <div key={order.id} className="border border-border rounded-xl p-4 bg-muted/30">
                       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <span className="font-bold text-foreground">{order.plan_name}</span>
-                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                          order.status === "paid" || order.status === "fulfilled"
-                            ? "bg-success/20 text-success"
-                            : order.status === "expired"
-                            ? "bg-destructive/20 text-destructive"
-                            : "bg-warning/20 text-warning"
-                        }`}>
-                          {order.status === "fulfilled" ? "已完成" : order.status === "paid" ? "已支付" : order.status === "expired" ? "已过期" : "待支付"}
+                        <span
+                          className={`text-xs font-bold px-2 py-1 rounded-full ${
+                            order.status === "paid" || order.status === "fulfilled"
+                              ? "bg-success/20 text-success"
+                              : order.status === "expired"
+                                ? "bg-destructive/20 text-destructive"
+                                : "bg-warning/20 text-warning"
+                          }`}
+                        >
+                          {order.status === "fulfilled"
+                            ? "已完成"
+                            : order.status === "paid"
+                              ? "已支付"
+                              : order.status === "expired"
+                                ? "已过期"
+                                : "待支付"}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
                         <div>
                           <span className="block text-xs">金额</span>
                           <span className="font-mono font-bold text-foreground">
-                            {order.crypto_amount ? `${order.crypto_amount} ${order.crypto_currency || ""}` : `¥${order.amount}`}
+                            {order.crypto_amount
+                              ? `${order.crypto_amount} ${order.crypto_currency || ""}`
+                              : `¥${order.amount}`}
                           </span>
                         </div>
                         <div>
                           <span className="block text-xs">支付方式</span>
                           <span className="font-bold text-foreground">
-                            {order.payment_method === "wechat" ? "微信" : order.payment_method === "alipay" ? "支付宝" : order.payment_method?.toUpperCase()}
+                            {order.payment_method === "wechat"
+                              ? "微信"
+                              : order.payment_method === "alipay"
+                                ? "支付宝"
+                                : order.payment_method?.toUpperCase()}
                           </span>
                         </div>
                         <div>
@@ -1030,7 +1078,9 @@ export default function ClientPortal() {
                         </div>
                         <div>
                           <span className="block text-xs">下单时间</span>
-                          <span className="font-bold text-foreground">{new Date(order.created_at).toLocaleDateString("zh-CN")}</span>
+                          <span className="font-bold text-foreground">
+                            {new Date(order.created_at).toLocaleDateString("zh-CN")}
+                          </span>
                         </div>
                       </div>
                     </div>
