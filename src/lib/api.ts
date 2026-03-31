@@ -63,6 +63,33 @@ export async function verifyCryptoPayment(orderId: string) {
   return callEdgeFunction("crypto-verify", { action: "verify", orderId });
 }
 
+// Plans APIs
+export async function getPlans() {
+  const { data, error } = await supabase
+    .from("plans")
+    .select("*")
+    .eq("enabled", true)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function adminGetPlans(token: string) {
+  return callEdgeFunction("admin-plans", { action: "list", token });
+}
+
+export async function adminCreatePlan(token: string, plan: object) {
+  return callEdgeFunction("admin-plans", { action: "create", token, plan });
+}
+
+export async function adminUpdatePlan(token: string, plan: object) {
+  return callEdgeFunction("admin-plans", { action: "update", token, plan });
+}
+
+export async function adminDeletePlan(token: string, planId: string) {
+  return callEdgeFunction("admin-plans", { action: "delete", token, plan: { id: planId } });
+}
+
 // Get orders for a UUID
 export async function getOrders(uuid: string) {
   const { data, error } = await supabase
