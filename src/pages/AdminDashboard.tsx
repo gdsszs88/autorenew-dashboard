@@ -137,6 +137,20 @@ export default function AdminDashboard() {
     setOrdersLoading(false);
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("确定删除该订单？")) return;
+    const key = `del-order-${orderId}`;
+    setBtnStatus(prev => ({ ...prev, [key]: "删除中..." }));
+    try {
+      await adminDeleteOrder(token, orderId);
+      setOrders(orders.filter(o => o.id !== orderId));
+      setOrdersTotal(prev => prev - 1);
+    } catch {
+      setBtnStatus(prev => ({ ...prev, [key]: "❌ 失败" }));
+      setTimeout(() => setBtnStatus(prev => ({ ...prev, [key]: "" })), 2000);
+    }
+  };
+
   const setBtnLoading = (key: string, text: string) => {
     setBtnStatus(prev => ({ ...prev, [key]: text }));
   };
