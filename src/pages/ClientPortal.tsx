@@ -98,8 +98,9 @@ export default function ClientPortal() {
     }
   }, []);
 
-  const extractUuid = (input: string) => {
+  const extractIdentifier = (input: string): string | null => {
     const trimmed = input.trim();
+    if (!trimmed) return null;
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (uuidRegex.test(trimmed)) return trimmed;
     try {
@@ -112,6 +113,8 @@ export default function ClientPortal() {
         if (json?.id && uuidRegex.test(json.id)) return json.id;
       }
     } catch {}
+    // Support SOCKS5: accept any non-empty string as username/password identifier
+    if (trimmed.length >= 1 && trimmed.length <= 256) return trimmed;
     return null;
   };
 
