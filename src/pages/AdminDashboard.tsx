@@ -219,9 +219,9 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-bold flex items-center text-client-primary">
               <Package className="w-5 h-5 mr-2" /> 商品管理
             </h2>
-            <button onClick={handleAddPlan}
-              className="bg-client-primary text-client-primary-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors flex items-center text-sm shadow-md">
-              <Plus className="w-4 h-4 mr-1" /> 添加套餐
+            <button onClick={handleAddPlan} disabled={!!btnStatus["addPlan"]}
+              className="bg-client-primary text-client-primary-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors flex items-center text-sm shadow-md disabled:opacity-70">
+              <Plus className="w-4 h-4 mr-1" /> {btnStatus["addPlan"] || "添加套餐"}
             </button>
           </div>
           <p className="text-xs text-muted-foreground mb-4">💡 修改后请点击每行右侧的"保存"按钮。添加/删除套餐不影响现有支付接口。</p>
