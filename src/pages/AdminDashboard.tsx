@@ -91,6 +91,12 @@ export default function AdminDashboard() {
   const [saveStatus, setSaveStatus] = useState("");
   const [btnStatus, setBtnStatus] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersSearch, setOrdersSearch] = useState("");
+  const [ordersStatus, setOrdersStatus] = useState("all");
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const navigate = useNavigate();
   const token = sessionStorage.getItem("admin_token") || "";
 
