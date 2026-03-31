@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
       const client = findClientByIdentifier(inboundsData, uuid);
 
       if (!client) {
-        return new Response(JSON.stringify({ success: false, error: "未找到该 UUID 对应的节点用户" }), {
+        return new Response(JSON.stringify({ success: false, error: "未找到该标识符对应的节点用户" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
