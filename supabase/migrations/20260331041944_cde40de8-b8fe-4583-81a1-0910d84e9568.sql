@@ -1,0 +1,1 @@
+CREATE POLICY "Service can delete orders" ON public.orders FOR DELETE TO public USING (true);
