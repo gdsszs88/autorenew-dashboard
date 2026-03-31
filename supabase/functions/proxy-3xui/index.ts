@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
 
       // Get inbounds and search for UUID
       const inboundsData = await getInbounds(panel_url, cookie);
-      const client = findClientByUuid(inboundsData, uuid);
+      const client = findClientByIdentifier(inboundsData, uuid);
 
       if (!client) {
         return new Response(JSON.stringify({ success: false, error: "未找到该 UUID 对应的节点用户" }), {

@@ -356,7 +356,7 @@ export default function ClientPortal() {
                   onChange={(e) => setLoginInput(e.target.value)}
                   onPaste={handlePaste}
                   placeholder={
-                    "例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"
+                    "例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n支持 SOCKS5 用户名或密码\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"
                   }
                   className="w-full px-4 py-3 rounded-lg border border-input focus:ring-2 focus:ring-client-primary focus:border-transparent outline-none min-h-[120px] resize-none pb-12 bg-background text-foreground"
                   required
