@@ -140,6 +140,10 @@ export default function LandingPage() {
         @media (max-width: 768px) {
           .lp-features-grid { grid-template-columns: 1fr; }
           .lp-hero h1 { font-size: 2rem; }
+          .lp-header { flex-wrap: wrap; justify-content: center; gap: 8px; padding: 10px 3%; }
+          .lp-header-center { position: static; transform: none; order: -1; width: 100%; text-align: center; }
+          .lp-logo { font-size: 1.2rem; }
+          .lp-nav-link { font-size: 1rem; padding: 8px 20px; }
         }
       `}</style>
 
