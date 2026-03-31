@@ -58,6 +58,7 @@ interface Order {
   crypto_currency: string | null;
   tx_hash: string | null;
   months: number;
+  remark?: string;
 }
 
 const defaultConfig: AdminConfigData = {
