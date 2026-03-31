@@ -65,6 +65,7 @@ export default function ClientPortal() {
     expiryDate: Date.now() + 5 * 86400000,
     trafficUsed: 0,
     trafficTotal: 100,
+    email: "",
   });
   const [dynamicPlans, setDynamicPlans] = useState<PlanItem[]>([]);
   const [checkoutData, setCheckoutData] = useState<{ months: number; price: number; planName: string } | null>(null);
