@@ -42,6 +42,24 @@ interface Plan {
   enabled: boolean;
 }
 
+interface Order {
+  id: string;
+  uuid: string;
+  plan_name: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  status: string;
+  created_at: string;
+  paid_at: string | null;
+  fulfilled_at: string | null;
+  email: string | null;
+  crypto_amount: number | null;
+  crypto_currency: string | null;
+  tx_hash: string | null;
+  months: number;
+}
+
 const defaultConfig: AdminConfigData = {
   panelUrl: "http://127.0.0.1:2053",
   panelUser: "admin",
