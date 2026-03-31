@@ -847,7 +847,18 @@ export default function ClientPortal() {
                     <h3 className="text-muted-foreground font-bold mb-1">订单信息</h3>
                     <div className="flex justify-between items-center">
                       <span className="text-xl font-bold">{checkoutData.planName}</span>
-                      <span className="text-2xl font-extrabold text-client-primary">¥{checkoutData.price}</span>
+                      <div className="text-right">
+                        {["usdt", "trx"].includes(selectedMethod) && cryptoPrice > 0 ? (
+                          <>
+                            <span className="text-2xl font-extrabold text-client-primary">
+                              {cryptoPrice} {selectedMethod.toUpperCase()}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">≈ ¥{checkoutData.price}</span>
+                          </>
+                        ) : (
+                          <span className="text-2xl font-extrabold text-client-primary">¥{checkoutData.price}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
