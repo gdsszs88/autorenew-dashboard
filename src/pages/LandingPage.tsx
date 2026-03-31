@@ -65,12 +65,14 @@ export default function LandingPage() {
           --lp-card-bg: #161b22;
         }
         .landing-page * { margin: 0; padding: 0; box-sizing: border-box; }
-        .lp-header { background-color: var(--lp-card-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 5%; display: flex; align-items: center; justify-content: center; position: sticky; top: 0; z-index: 100; }
+        .lp-header { background-color: var(--lp-card-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 5%; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
         .dark .lp-header { box-shadow: 0 2px 10px rgba(0,0,0,0.3); border-bottom: 1px solid #21262d; }
-        .lp-logo { font-size: 1.5rem; font-weight: 800; color: var(--lp-primary); text-decoration: none; display: flex; align-items: center; gap: 10px; position: absolute; left: 5%; }
+        .lp-logo { font-size: 1.5rem; font-weight: 800; color: var(--lp-primary); text-decoration: none; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .lp-logo-icon { width: 32px; height: 32px; background-color: var(--lp-primary); color: white; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 18px; }
         .dark .lp-logo-icon { color: #0d1117; }
-        .lp-nav-link { display: inline-block; padding: 15px 36px; background-color: var(--lp-primary); color: white; text-decoration: none; border-radius: 30px; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 12px rgba(43,122,59,0.3); transition: all 0.3s ease; }
+        .lp-header-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .lp-header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .lp-nav-link { display: inline-block; padding: 12px 30px; background-color: var(--lp-primary); color: white; text-decoration: none; border-radius: 30px; font-size: 1.3rem; font-weight: 700; box-shadow: 0 4px 12px rgba(43,122,59,0.3); transition: all 0.3s ease; white-space: nowrap; }
         .dark .lp-nav-link { color: #0d1117; box-shadow: 0 4px 20px rgba(63,185,80,0.3); }
         .lp-nav-link:hover { background-color: var(--lp-primary-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43,122,59,0.4); }
         .lp-hero { display: flex; align-items: center; justify-content: space-between; padding: 80px 5%; max-width: 1400px; margin: 0 auto; gap: 50px; }
@@ -138,6 +140,10 @@ export default function LandingPage() {
         @media (max-width: 768px) {
           .lp-features-grid { grid-template-columns: 1fr; }
           .lp-hero h1 { font-size: 2rem; }
+          .lp-header { flex-wrap: wrap; justify-content: center; gap: 8px; padding: 10px 3%; }
+          .lp-header-center { position: static; transform: none; order: -1; width: 100%; text-align: center; }
+          .lp-logo { font-size: 1.2rem; }
+          .lp-nav-link { font-size: 1rem; padding: 8px 20px; }
         }
       `}</style>
 
@@ -146,12 +152,14 @@ export default function LandingPage() {
         <header className="lp-header">
           <a href="#" className="lp-logo">
             <div className="lp-logo-icon">IP</div>
-            静态住址服务
+            静态住宅服务
           </a>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", position: "absolute", right: "5%" }}>
+          <div className="lp-header-center">
             <Link to="/portal" className="lp-nav-link">
               充值与续费
             </Link>
+          </div>
+          <div className="lp-header-right">
             <ThemeToggle />
           </div>
         </header>
