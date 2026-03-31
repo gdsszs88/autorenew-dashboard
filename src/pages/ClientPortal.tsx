@@ -83,6 +83,9 @@ export default function ClientPortal() {
     getPublicConfig()
       .then(setConfig)
       .catch(() => {});
+    getPlans()
+      .then(setDynamicPlans)
+      .catch(() => {});
     // Load jsQR
     if (!(window as any).jsQR) {
       const s = document.createElement("script");
