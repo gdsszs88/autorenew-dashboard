@@ -45,6 +45,7 @@ export type Database = {
           tawk_id: string
           telegram_link: string
           updated_at: string
+          video_embed: string
         }
         Insert: {
           admin_password_hash?: string
@@ -76,6 +77,7 @@ export type Database = {
           tawk_id?: string
           telegram_link?: string
           updated_at?: string
+          video_embed?: string
         }
         Update: {
           admin_password_hash?: string
@@ -107,6 +109,7 @@ export type Database = {
           tawk_id?: string
           telegram_link?: string
           updated_at?: string
+          video_embed?: string
         }
         Relationships: []
       }

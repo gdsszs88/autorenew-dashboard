@@ -30,6 +30,7 @@ interface AdminConfigData {
   tawkId: string;
   qqQrcodeUrl: string;
   telegramLink: string;
+  videoEmbed: string;
 }
 
 interface Plan {
@@ -90,6 +91,7 @@ const defaultConfig: AdminConfigData = {
   tawkId: "",
   qqQrcodeUrl: "",
   telegramLink: "",
+  videoEmbed: "",
 };
 
 export default function AdminDashboard() {
@@ -372,6 +374,31 @@ export default function AdminDashboard() {
                   <button onClick={() => handleSave("fab")} disabled={!!btnStatus["fab"]}
                     className="w-full bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md disabled:opacity-70">
                     {btnStatus["fab"] || "保存悬浮按钮配置"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 视频嵌入配置 */}
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border mt-6">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-admin-primary border-b border-border pb-3">
+                <Settings className="w-5 h-5 mr-2" /> 视频窗口配置
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">视频链接或嵌入代码</label>
+                  <textarea
+                    value={config.videoEmbed}
+                    onChange={e => setConfig({ ...config, videoEmbed: e.target.value })}
+                    placeholder={"支持以下格式：\n1. 直接视频链接: https://example.com/video.mp4\n2. YouTube: https://www.youtube.com/watch?v=xxx\n3. Bilibili: https://www.bilibili.com/video/BVxxx\n4. iframe 嵌入代码: <iframe src=...></iframe>"}
+                    className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background min-h-[120px] resize-y"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">支持 YouTube、Bilibili、抖音、MP4 直链、iframe 嵌入代码等</p>
+                </div>
+                <div className="pt-4">
+                  <button onClick={() => handleSave("video")} disabled={!!btnStatus["video"]}
+                    className="w-full bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md disabled:opacity-70">
+                    {btnStatus["video"] || "保存视频配置"}
                   </button>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
@@ -54,6 +54,24 @@ interface PlanItem {
   enabled: boolean;
 }
 
+function parseVideoEmbed(raw: string): string {
+  if (!raw || !raw.trim()) return "";
+  const s = raw.trim();
+  // Already an iframe
+  if (s.startsWith("<iframe")) return s;
+  // YouTube
+  const ytMatch = s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
+  if (ytMatch) return `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  // Bilibili
+  const biliMatch = s.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/);
+  if (biliMatch) return `<iframe src="https://player.bilibili.com/player.html?bvid=${biliMatch[1]}&high_quality=1" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  // Direct video link
+  if (/\.(mp4|webm|ogg)(\?|$)/i.test(s)) return `<video src="${s}" controls style="width:100%;border-radius:12px;"></video>`;
+  // Fallback: treat as iframe src
+  if (s.startsWith("http")) return `<iframe src="${s}" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:12px;"></iframe>`;
+  return "";
+}
+
 export default function ClientPortal() {
   const [logged, setLogged] = useState(false);
   const [uuid, setUuid] = useState("");
@@ -80,6 +98,7 @@ export default function ClientPortal() {
   const [payUrl, setPayUrl] = useState("");
   const [orderCreating, setOrderCreating] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [videoEmbed, setVideoEmbed] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +110,12 @@ export default function ClientPortal() {
     getPlans()
       .then(setDynamicPlans)
       .catch(() => {});
+    // Fetch video embed
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.from("admin_config").select("video_embed").limit(1).single().then(({ data }) => {
+        if (data?.video_embed) setVideoEmbed(data.video_embed);
+      });
+    });
     // Load jsQR
     if (!(window as any).jsQR) {
       const s = document.createElement("script");
@@ -346,9 +371,11 @@ export default function ClientPortal() {
       .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   // Login screen
+  const videoHtml = useMemo(() => parseVideoEmbed(videoEmbed), [videoEmbed]);
+
   if (!logged) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted p-4 relative">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted p-4 relative">
         <Link to="/" className="absolute top-4 left-4 text-2xl font-extrabold text-client-primary hover:opacity-80 transition-opacity">首页</Link>
         <div className="absolute top-4 right-4"><ThemeToggle /></div>
         <div className="max-w-md w-full bg-card rounded-2xl shadow-xl overflow-hidden">
@@ -357,6 +384,11 @@ export default function ClientPortal() {
             <h1 className="text-2xl font-bold text-client-primary-foreground mb-2">节点自助服务中心</h1>
             <p className="text-client-primary-foreground/80 text-sm">支持直接粘贴链接 或 扫码识别</p>
           </div>
+          {videoHtml && (
+            <div className="px-6 pt-6">
+              <div dangerouslySetInnerHTML={{ __html: videoHtml }} className="rounded-xl overflow-hidden" />
+            </div>
+          )}
           <div className="p-8">
             <form onSubmit={handleLogin}>
               <div className="relative mb-6">
