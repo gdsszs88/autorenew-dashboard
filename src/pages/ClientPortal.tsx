@@ -65,6 +65,7 @@ export default function ClientPortal() {
     trafficUsed: 0,
     trafficTotal: 100,
   });
+  const [dynamicPlans, setDynamicPlans] = useState<PlanItem[]>([]);
   const [checkoutData, setCheckoutData] = useState<{ months: number; price: number; planName: string } | null>(null);
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
