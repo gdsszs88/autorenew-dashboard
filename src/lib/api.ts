@@ -63,6 +63,11 @@ export async function verifyCryptoPayment(orderId: string) {
   return callEdgeFunction("crypto-verify", { action: "verify", orderId });
 }
 
+// Exchange rates
+export async function getExchangeRates() {
+  return callEdgeFunction("exchange-rates", {});
+}
+
 // Plans APIs
 export async function getPlans() {
   const { data, error } = await supabase
