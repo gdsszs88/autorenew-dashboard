@@ -429,7 +429,7 @@ Deno.serve(async (req) => {
       if (cookie) {
         const client = await findClient(config.panel_url, cookie, order.uuid);
         if (client) {
-          const success = await extendExpiry(config.panel_url, cookie, client.inboundId, client.email, client.expiryTime, order.months);
+          const success = await extendExpiry(config.panel_url, cookie, client.inboundId, client.email, client.expiryTime, order.months, client.isSocks5);
           if (success) {
             await supabase.from("orders").update({ status: "fulfilled", fulfilled_at: new Date().toISOString() }).eq("id", order.id);
           } else {
