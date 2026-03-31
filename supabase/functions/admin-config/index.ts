@@ -108,6 +108,9 @@ Deno.serve(async (req) => {
         price_shared_month: config.priceSharedMonth,
         price_shared_quarter: config.priceSharedQuarter,
         price_shared_year: config.priceSharedYear,
+        tawk_id: config.tawkId,
+        qq_qrcode_url: config.qqQrcodeUrl,
+        telegram_link: config.telegramLink,
       };
 
       const { error } = await supabase
