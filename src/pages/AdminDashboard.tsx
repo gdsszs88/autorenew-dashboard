@@ -206,12 +206,6 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {saveStatus && (
-          <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-xl flex items-center shadow-sm">
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-            {saveStatus}
-          </div>
-        )}
 
         {/* 商品管理 - Full width */}
         <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
