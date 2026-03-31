@@ -102,19 +102,24 @@ export default function ClientPortal() {
     const trimmed = input.trim();
     if (!trimmed) return null;
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    if (uuidRegex.test(trimmed)) return trimmed;
-    try {
-      if (trimmed.startsWith("vless://") || trimmed.startsWith("trojan://")) {
-        const extracted = trimmed.split("://")[1].split("@")[0];
-        if (uuidRegex.test(extracted)) return extracted;
-      } else if (trimmed.startsWith("vmess://")) {
-        const decoded = atob(trimmed.substring(8));
-        const json = JSON.parse(decoded);
-        if (json?.id && uuidRegex.test(json.id)) return json.id;
-      }
-    } catch {}
-    // Support SOCKS5: accept any non-empty string as username/password identifier
-    if (trimmed.length >= 1 && trimmed.length <= 256) return trimmed;
+    // Try each line (user may paste multi-line content)
+    const lines = trimmed.split(/\n/).map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (uuidRegex.test(line)) return line;
+      try {
+        if (line.startsWith("vless://") || line.startsWith("trojan://")) {
+          const extracted = line.split("://")[1].split("@")[0];
+          if (uuidRegex.test(extracted)) return extracted;
+        } else if (line.startsWith("vmess://")) {
+          const decoded = atob(line.substring(8));
+          const json = JSON.parse(decoded);
+          if (json?.id && uuidRegex.test(json.id)) return json.id;
+        }
+      } catch {}
+    }
+    // For SOCKS5: use the first non-empty line as identifier
+    const firstLine = lines[0];
+    if (firstLine && firstLine.length <= 256) return firstLine;
     return null;
   };
 
