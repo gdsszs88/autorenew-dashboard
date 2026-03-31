@@ -1,22 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-
-  useEffect(() => {
-    // Load Tawk.to
-    if (!(window as any).Tawk_API) {
-      (window as any).Tawk_API = {};
-      (window as any).Tawk_LoadStart = new Date();
-      const s = document.createElement("script");
-      s.async = true;
-      s.src = "https://embed.tawk.to/69c7635168a74a1c3a60f80a/1jkpdntv2";
-      s.charset = "UTF-8";
-      s.setAttribute("crossorigin", "*");
-      document.body.appendChild(s);
-    }
-  }, []);
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
