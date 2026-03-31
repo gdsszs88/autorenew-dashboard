@@ -58,7 +58,8 @@ async function getUuidRemarkMap(panelUrl: string, panelUser: string, panelPass: 
         ];
 
         for (const entry of entries) {
-          const remark = entry.email || entry.user || entry.username || "";
+          // For SOCKS5 (accounts with user/pass), use inbound.remark as the remark
+          const remark = entry.email || inbound.remark || entry.user || entry.username || "";
           const candidateKeys = [entry.id, entry.email, entry.user, entry.username, entry.pass, entry.password]
             .filter((value): value is string => typeof value === "string" && value.length > 0);
           for (const key of candidateKeys) {
