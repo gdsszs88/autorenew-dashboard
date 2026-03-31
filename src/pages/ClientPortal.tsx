@@ -98,8 +98,9 @@ export default function ClientPortal() {
     }
   }, []);
 
-  const extractUuid = (input: string) => {
+  const extractIdentifier = (input: string): string | null => {
     const trimmed = input.trim();
+    if (!trimmed) return null;
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     if (uuidRegex.test(trimmed)) return trimmed;
     try {
@@ -112,6 +113,8 @@ export default function ClientPortal() {
         if (json?.id && uuidRegex.test(json.id)) return json.id;
       }
     } catch {}
+    // Support SOCKS5: accept any non-empty string as username/password identifier
+    if (trimmed.length >= 1 && trimmed.length <= 256) return trimmed;
     return null;
   };
 
@@ -160,9 +163,9 @@ export default function ClientPortal() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const extracted = extractUuid(loginInput);
+    const extracted = extractIdentifier(loginInput);
     if (!extracted) {
-      setError("格式错误！请输入正确的 UUID 或完整的节点链接。");
+      setError("请输入 UUID、节点链接或 SOCKS5 用户名/密码。");
       return;
     }
     setUuid(extracted);
@@ -353,7 +356,7 @@ export default function ClientPortal() {
                   onChange={(e) => setLoginInput(e.target.value)}
                   onPaste={handlePaste}
                   placeholder={
-                    "例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"
+                    "例如: 550e8400-e29b-41d4...\n或者粘贴完整的 vmess:// / vless:// 链接\n支持 SOCKS5 用户名或密码\n🌟 支持直接在此处 Ctrl+V 粘贴二维码截图"
                   }
                   className="w-full px-4 py-3 rounded-lg border border-input focus:ring-2 focus:ring-client-primary focus:border-transparent outline-none min-h-[120px] resize-none pb-12 bg-background text-foreground"
                   required

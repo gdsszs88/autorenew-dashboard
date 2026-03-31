@@ -93,8 +93,8 @@ async function getInbounds(panelUrl: string, cookie: string) {
   return await res.json();
 }
 
-// Find client by UUID in all inbounds
-function findClientByUuid(inboundsData: any, uuid: string) {
+// Find client by UUID or SOCKS5 username/password in all inbounds
+function findClientByIdentifier(inboundsData: any, identifier: string) {
   if (!inboundsData?.success || !inboundsData?.obj) return null;
 
   for (const inbound of inboundsData.obj) {
@@ -102,8 +102,12 @@ function findClientByUuid(inboundsData: any, uuid: string) {
       const settings = JSON.parse(inbound.settings || "{}");
       const clients = settings.clients || [];
       for (const client of clients) {
-        if (client.id === uuid || client.password === uuid) {
-          // Found the client - get traffic stats
+        // Match UUID (id/password for vmess/vless/trojan) or SOCKS5 username/password
+        const match =
+          client.id === identifier ||
+          client.password === identifier ||
+          client.username === identifier;
+        if (match) {
           const clientStats = inbound.clientStats?.find(
             (s: any) => s.email === client.email
           );
@@ -201,7 +205,7 @@ Deno.serve(async (req) => {
 
       // Get inbounds and search for UUID
       const inboundsData = await getInbounds(panel_url, cookie);
-      const client = findClientByUuid(inboundsData, uuid);
+      const client = findClientByIdentifier(inboundsData, uuid);
 
       if (!client) {
         return new Response(JSON.stringify({ success: false, error: "未找到该 UUID 对应的节点用户" }), {

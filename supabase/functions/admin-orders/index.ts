@@ -56,6 +56,7 @@ async function getUuidRemarkMap(panelUrl: string, panelUser: string, panelPass: 
         for (const client of clients) {
           if (client.id) map[client.id] = client.email || "";
           if (client.password) map[client.password] = client.email || "";
+          if (client.username) map[client.username] = client.email || "";
         }
       } catch {}
     }
