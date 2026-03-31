@@ -584,7 +584,7 @@ Deno.serve(async (req) => {
             appid: appId,
             trade_order_id: tradeNo,
             total_fee: String(amount),
-            title: `续费 - ${planName}`,
+            title: `充值续费 - ${planName}`,
             time: String(Math.floor(Date.now() / 1000)),
             notify_url: notifyUrl,
             nonce_str: Math.random().toString(36).substring(2, 15),
