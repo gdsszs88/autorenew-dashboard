@@ -322,11 +322,13 @@ export default function AdminDashboard() {
                   className="w-full border border-input p-2.5 rounded-lg focus:ring-2 focus:ring-admin-primary outline-none bg-background" />
               </div>
               <div className="flex space-x-3 pt-4">
-                <button onClick={handleTest} className="flex-1 bg-secondary text-secondary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors border border-border">
-                  测试连接
+                <button onClick={handleTest} disabled={!!btnStatus["test"]}
+                  className="flex-1 bg-secondary text-secondary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors border border-border disabled:opacity-70">
+                  {btnStatus["test"] || "测试连接"}
                 </button>
-                <button onClick={handleSave} className="flex-1 bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md">
-                  保存配置
+                <button onClick={() => handleSave("panel")} disabled={!!btnStatus["panel"]}
+                  className="flex-1 bg-admin-primary text-admin-primary-foreground py-2.5 rounded-lg font-bold hover:opacity-90 transition-colors shadow-md disabled:opacity-70">
+                  {btnStatus["panel"] || "保存配置"}
                 </button>
               </div>
             </div>
