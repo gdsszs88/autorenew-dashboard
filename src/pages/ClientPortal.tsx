@@ -903,6 +903,11 @@ export default function ClientPortal() {
                           <div className="bg-success/10 text-success p-3 rounded-lg mb-4 text-sm font-bold border border-success/20">
                             ✅ 订单已创建，请转账后点击验证
                           </div>
+                          {exchangeRates && (
+                            <p className="text-xs text-muted-foreground mb-2">
+                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥{(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
+                            </p>
+                          )}
                           <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
                           <div className="text-4xl font-extrabold text-client-primary mb-4">{cryptoPrice}</div>
                           <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
