@@ -13,7 +13,7 @@ import {
   QrCode,
   Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment, getPlans } from "@/lib/api";
+import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment, getPlans, getOrders } from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
@@ -67,6 +67,8 @@ export default function ClientPortal() {
     trafficTotal: 100,
   });
   const [dynamicPlans, setDynamicPlans] = useState<PlanItem[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [checkoutData, setCheckoutData] = useState<{ months: number; price: number; planName: string } | null>(null);
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
@@ -425,6 +427,18 @@ export default function ClientPortal() {
             className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "renew" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}
           >
             <CreditCard className="w-5 h-5 mr-3" /> 在线续费
+          </button>
+          <button
+            onClick={() => {
+              setTab("orders");
+              if (uuid && orders.length === 0) {
+                setOrdersLoading(true);
+                getOrders(uuid).then(setOrders).catch(() => {}).finally(() => setOrdersLoading(false));
+              }
+            }}
+            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-bold ${tab === "orders" ? "bg-client-primary text-client-primary-foreground shadow-md" : "bg-card text-muted-foreground hover:bg-secondary border border-border"}`}
+          >
+            <Activity className="w-5 h-5 mr-3" /> 订单记录
           </button>
         </div>
 
@@ -854,6 +868,60 @@ export default function ClientPortal() {
                     </div>
                   )}
                 </>
+              )}
+            </div>
+          )}
+
+          {tab === "orders" && (
+            <div className="animate-fade-in">
+              <h2 className="text-2xl font-bold border-b border-border pb-4 mb-6">订单记录</h2>
+              {ordersLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin w-8 h-8 border-4 border-client-primary border-t-transparent rounded-full" />
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12">暂无订单记录</div>
+              ) : (
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <div key={order.id} className="border border-border rounded-xl p-4 bg-muted/30">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <span className="font-bold text-foreground">{order.plan_name}</span>
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          order.status === "paid" || order.status === "fulfilled"
+                            ? "bg-success/20 text-success"
+                            : order.status === "expired"
+                            ? "bg-destructive/20 text-destructive"
+                            : "bg-warning/20 text-warning"
+                        }`}>
+                          {order.status === "fulfilled" ? "已完成" : order.status === "paid" ? "已支付" : order.status === "expired" ? "已过期" : "待支付"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
+                        <div>
+                          <span className="block text-xs">金额</span>
+                          <span className="font-mono font-bold text-foreground">
+                            {order.crypto_amount ? `${order.crypto_amount} ${order.crypto_currency || ""}` : `¥${order.amount}`}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-xs">支付方式</span>
+                          <span className="font-bold text-foreground">
+                            {order.payment_method === "wechat" ? "微信" : order.payment_method === "alipay" ? "支付宝" : order.payment_method?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-xs">时长</span>
+                          <span className="font-bold text-foreground">{order.months}个月</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs">下单时间</span>
+                          <span className="font-bold text-foreground">{new Date(order.created_at).toLocaleDateString("zh-CN")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
