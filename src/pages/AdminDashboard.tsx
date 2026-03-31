@@ -97,6 +97,7 @@ export default function AdminDashboard() {
   const [ordersSearch, setOrdersSearch] = useState("");
   const [ordersStatus, setOrdersStatus] = useState("all");
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const token = sessionStorage.getItem("admin_token") || "";
 
