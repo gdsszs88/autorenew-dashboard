@@ -243,15 +243,18 @@ export default function AdminDashboard() {
 
         {/* Tab Menu */}
         <Tabs defaultValue="panel" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-12 bg-card border border-border rounded-2xl p-1">
-            <TabsTrigger value="panel" className="rounded-xl data-[state=active]:bg-admin-primary data-[state=active]:text-admin-primary-foreground font-bold">
-              <Server className="w-4 h-4 mr-2" /> 面板对接配置
+          <TabsList className="w-full grid grid-cols-4 h-12 bg-card border border-border rounded-2xl p-1">
+            <TabsTrigger value="panel" className="rounded-xl data-[state=active]:bg-admin-primary data-[state=active]:text-admin-primary-foreground font-bold text-xs sm:text-sm">
+              <Server className="w-4 h-4 mr-1 sm:mr-2" /> 面板对接
             </TabsTrigger>
-            <TabsTrigger value="payment" className="rounded-xl data-[state=active]:bg-warning data-[state=active]:text-warning-foreground font-bold">
-              <QrCode className="w-4 h-4 mr-2" /> 支付网关
+            <TabsTrigger value="payment" className="rounded-xl data-[state=active]:bg-warning data-[state=active]:text-warning-foreground font-bold text-xs sm:text-sm">
+              <QrCode className="w-4 h-4 mr-1 sm:mr-2" /> 支付网关
             </TabsTrigger>
-            <TabsTrigger value="products" className="rounded-xl data-[state=active]:bg-client-primary data-[state=active]:text-client-primary-foreground font-bold">
-              <Package className="w-4 h-4 mr-2" /> 商品管理
+            <TabsTrigger value="products" className="rounded-xl data-[state=active]:bg-client-primary data-[state=active]:text-client-primary-foreground font-bold text-xs sm:text-sm">
+              <Package className="w-4 h-4 mr-1 sm:mr-2" /> 商品管理
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-xl data-[state=active]:bg-accent data-[state=active]:text-accent-foreground font-bold text-xs sm:text-sm" onClick={() => { if (orders.length === 0) loadOrders(); }}>
+              <ClipboardList className="w-4 h-4 mr-1 sm:mr-2" /> 订单管理
             </TabsTrigger>
           </TabsList>
 
