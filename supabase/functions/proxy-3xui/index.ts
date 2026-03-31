@@ -125,18 +125,16 @@ function findClientByIdentifier(inboundsData: any, identifier: string) {
           return statsKey.length > 0 && candidateKeys.includes(statsKey);
         });
 
-        console.log(`Matched entry: ${JSON.stringify(entry)}, clientStats: ${JSON.stringify(clientStats)}`);
-
-        // Remark priority: clientStats.email > entry.email (but skip if email equals identifier to avoid showing username as remark)
+        // Remark priority: clientStats.email > entry.email > inbound.remark (for SOCKS5)
         let remark = "";
         if (clientStats?.email && clientStats.email !== identifier) {
           remark = clientStats.email;
         } else if (entry.email && entry.email !== identifier) {
           remark = entry.email;
-        } else if (clientStats?.email) {
-          remark = clientStats.email;
+        } else if (inbound.remark) {
+          remark = inbound.remark;
         } else {
-          remark = entry.email || entry.user || entry.username || "";
+          remark = clientStats?.email || entry.email || "";
         }
 
         return {
