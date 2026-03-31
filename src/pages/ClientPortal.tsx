@@ -483,118 +483,137 @@ export default function ClientPortal() {
                 </div>
               ) : (
                 <div className="space-y-10">
-                  {/* 独享分组 */}
-                  {dynamicPlans.filter(p => p.category === "exclusive").length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">🔒</span>
-                        <h3 className="text-xl font-bold text-foreground">
-                          独享套餐【不按套餐续费的用户链接被锁后果自负，不予解锁】
-                        </h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户⚠️
-                        共享用户请勿续费独享，否则链接将被锁定
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        {dynamicPlans.filter(p => p.category === "exclusive").map((plan) => (
-                          <div
-                            key={plan.id}
-                            className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-client-primary bg-card"}`}
-                          >
-                            {plan.featured && (
-                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
-                                推荐
-                              </div>
-                            )}
-                            <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
-                              {plan.title}
-                            </h3>
-                            <div className="text-4xl font-extrabold text-client-primary mb-3">
-                              ¥{plan.price}
-                              <span className="text-base font-normal text-muted-foreground">/{plan.duration_days}天</span>
-                            </div>
-                            <ul className="text-sm text-muted-foreground space-y-2 mb-6">
-                              <li className="flex items-center">
-                                <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" />{" "}
-                                {plan.description || "独享带宽，速度有保障"}
-                              </li>
-                              <li className="flex items-center">
-                                <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 增加 {plan.duration_days}{" "}
-                                天有效期
-                              </li>
-                              <li className="flex items-center">
-                                <ChevronRight className="w-4 h-4 text-client-primary mr-1 shrink-0" /> 立即重置流量
-                              </li>
-                            </ul>
-                            <button
-                              onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
-                              className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}
-                            >
-                              立即购买
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {(() => {
+                    // Detect user type from email remark
+                    const email = clientData.email || "";
+                    const isExclusive = email.includes("独享");
+                    const isShared = email.includes("共享");
+                    const userType: "exclusive" | "shared" | "all" = isExclusive ? "exclusive" : isShared ? "shared" : "all";
 
-                  {/* 共享分组 */}
-                  {dynamicPlans.filter(p => p.category === "shared").length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">👥</span>
-                        <h3 className="text-xl font-bold text-foreground">
-                          共享套餐【不按套餐续费的用户链接被锁后果自负，不予解锁】
-                        </h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        多人共用线路，价格更实惠，适合日常轻度使用。⚠️ 独享用户请勿续费共享，否则链接将被锁定
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        {dynamicPlans.filter(p => p.category === "shared").map((plan) => (
-                          <div
-                            key={plan.id}
-                            className={`rounded-2xl p-6 relative transition-colors ${plan.featured ? "border-2 border-success shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-success bg-card"}`}
-                          >
-                            {plan.featured && (
-                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-success text-success-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
-                                性价比
-                              </div>
-                            )}
-                            <h3 className={`text-lg font-bold mb-2 ${plan.featured ? "" : "text-muted-foreground"}`}>
-                              {plan.title}
-                            </h3>
-                            <div className="text-4xl font-extrabold text-success mb-3">
-                              ¥{plan.price}
-                              <span className="text-base font-normal text-muted-foreground">/{plan.duration_days}天</span>
-                            </div>
-                            <ul className="text-sm text-muted-foreground space-y-2 mb-6">
-                              <li className="flex items-center">
-                                <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> {plan.description || "多人共享，价格实惠"}
-                              </li>
-                              <li className="flex items-center">
-                                <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 增加 {plan.duration_days} 天有效期
-                              </li>
-                              <li className="flex items-center">
-                                <ChevronRight className="w-4 h-4 text-success mr-1 shrink-0" /> 立即重置流量
-                              </li>
-                            </ul>
-                            <button
-                              onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
-                              className={`w-full font-bold py-3 rounded-xl transition-colors ${plan.featured ? "bg-success text-success-foreground hover:opacity-90 shadow-md" : "bg-success/10 text-success hover:bg-success hover:text-success-foreground"}`}
-                            >
-                              立即购买
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    const exclusivePlans = dynamicPlans.filter(p => p.category === "exclusive");
+                    const sharedPlans = dynamicPlans.filter(p => p.category === "shared");
+                    const exclusiveDisabled = userType === "shared";
+                    const sharedDisabled = userType === "exclusive";
 
-                  {dynamicPlans.length === 0 && (
-                    <div className="text-center text-muted-foreground py-12">暂无可用套餐</div>
-                  )}
+                    return (
+                      <>
+                        {/* 独享分组 */}
+                        {exclusivePlans.length > 0 && (
+                          <div className={exclusiveDisabled ? "opacity-50 pointer-events-none select-none" : ""}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-lg">🔒</span>
+                              <h3 className="text-xl font-bold text-foreground">
+                                独享套餐{exclusiveDisabled ? "（您是共享用户，无法购买）" : "【不按套餐续费的用户链接被锁后果自负，不予解锁】"}
+                              </h3>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              带宽独享，不与他人共用线路，速度更快更稳定，适合高需求用户
+                              {!exclusiveDisabled && "⚠️ 共享用户请勿续费独享，否则链接将被锁定"}
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                              {exclusivePlans.map((plan) => (
+                                <div
+                                  key={plan.id}
+                                  className={`rounded-2xl p-6 relative transition-colors ${exclusiveDisabled ? "bg-muted border border-border grayscale" : plan.featured ? "border-2 border-client-primary shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-client-primary bg-card"}`}
+                                >
+                                  {plan.featured && !exclusiveDisabled && (
+                                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-client-primary text-client-primary-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                                      推荐
+                                    </div>
+                                  )}
+                                  <h3 className={`text-lg font-bold mb-2 ${plan.featured && !exclusiveDisabled ? "" : "text-muted-foreground"}`}>
+                                    {plan.title}
+                                  </h3>
+                                  <div className={`text-4xl font-extrabold mb-3 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`}>
+                                    ¥{plan.price}
+                                    <span className="text-base font-normal text-muted-foreground">/{plan.duration_days}天</span>
+                                  </div>
+                                  <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                                    <li className="flex items-center">
+                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`} />{" "}
+                                      {plan.description || "独享带宽，速度有保障"}
+                                    </li>
+                                    <li className="flex items-center">
+                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`} /> 增加 {plan.duration_days} 天有效期
+                                    </li>
+                                    <li className="flex items-center">
+                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${exclusiveDisabled ? "text-muted-foreground" : "text-client-primary"}`} /> 立即重置流量
+                                    </li>
+                                  </ul>
+                                  <button
+                                    disabled={exclusiveDisabled}
+                                    onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
+                                    className={`w-full font-bold py-3 rounded-xl transition-colors ${exclusiveDisabled ? "bg-muted text-muted-foreground cursor-not-allowed" : plan.featured ? "bg-client-primary text-client-primary-foreground hover:opacity-90 shadow-md" : "bg-client-primary/10 text-client-primary hover:bg-client-primary hover:text-client-primary-foreground"}`}
+                                  >
+                                    {exclusiveDisabled ? "不可购买" : "立即购买"}
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 共享分组 */}
+                        {sharedPlans.length > 0 && (
+                          <div className={sharedDisabled ? "opacity-50 pointer-events-none select-none" : ""}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-lg">👥</span>
+                              <h3 className="text-xl font-bold text-foreground">
+                                共享套餐{sharedDisabled ? "（您是独享用户，无法购买）" : "【不按套餐续费的用户链接被锁后果自负，不予解锁】"}
+                              </h3>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              多人共用线路，价格更实惠，适合日常轻度使用。
+                              {!sharedDisabled && "⚠️ 独享用户请勿续费共享，否则链接将被锁定"}
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                              {sharedPlans.map((plan) => (
+                                <div
+                                  key={plan.id}
+                                  className={`rounded-2xl p-6 relative transition-colors ${sharedDisabled ? "bg-muted border border-border grayscale" : plan.featured ? "border-2 border-success shadow-xl transform md:-translate-y-2 bg-card" : "border border-border hover:border-success bg-card"}`}
+                                >
+                                  {plan.featured && !sharedDisabled && (
+                                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-success text-success-foreground text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                                      性价比
+                                    </div>
+                                  )}
+                                  <h3 className={`text-lg font-bold mb-2 ${plan.featured && !sharedDisabled ? "" : "text-muted-foreground"}`}>
+                                    {plan.title}
+                                  </h3>
+                                  <div className={`text-4xl font-extrabold mb-3 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`}>
+                                    ¥{plan.price}
+                                    <span className="text-base font-normal text-muted-foreground">/{plan.duration_days}天</span>
+                                  </div>
+                                  <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                                    <li className="flex items-center">
+                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`} /> {plan.description || "多人共享，价格实惠"}
+                                    </li>
+                                    <li className="flex items-center">
+                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`} /> 增加 {plan.duration_days} 天有效期
+                                    </li>
+                                    <li className="flex items-center">
+                                      <ChevronRight className={`w-4 h-4 mr-1 shrink-0 ${sharedDisabled ? "text-muted-foreground" : "text-success"}`} /> 立即重置流量
+                                    </li>
+                                  </ul>
+                                  <button
+                                    disabled={sharedDisabled}
+                                    onClick={() => initiateCheckout(plan.duration_months, plan.price, plan.title)}
+                                    className={`w-full font-bold py-3 rounded-xl transition-colors ${sharedDisabled ? "bg-muted text-muted-foreground cursor-not-allowed" : plan.featured ? "bg-success text-success-foreground hover:opacity-90 shadow-md" : "bg-success/10 text-success hover:bg-success hover:text-success-foreground"}`}
+                                  >
+                                    {sharedDisabled ? "不可购买" : "立即购买"}
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {dynamicPlans.length === 0 && (
+                          <div className="text-center text-muted-foreground py-12">暂无可用套餐</div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
