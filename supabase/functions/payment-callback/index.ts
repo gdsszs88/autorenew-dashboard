@@ -217,8 +217,8 @@ async function login3xui(panelUrl: string, username: string, password: string): 
   }
 }
 
-// Find client UUID in inbounds and return inbound ID + client email
-async function findClient(panelUrl: string, cookie: string, uuid: string) {
+// Find client by UUID/username/password in inbounds (supports VMESS/VLESS + SOCKS5)
+async function findClient(panelUrl: string, cookie: string, identifier: string) {
   const baseUrl = panelUrl.replace(/\/+$/, "");
   const res = await fetchUnsafe(`${baseUrl}/panel/api/inbounds/list`, {
     headers: { Cookie: cookie, Accept: "application/json" },
@@ -229,12 +229,24 @@ async function findClient(panelUrl: string, cookie: string, uuid: string) {
   for (const inbound of data.obj) {
     try {
       const settings = JSON.parse(inbound.settings || "{}");
-      for (const client of settings.clients || []) {
-        if (client.id === uuid || client.password === uuid) {
+      const entries = [
+        ...(Array.isArray(settings.clients) ? settings.clients : []),
+        ...(Array.isArray(settings.accounts) ? settings.accounts : []),
+      ];
+
+      for (const entry of entries) {
+        const candidateKeys = [
+          entry?.id, entry?.email, entry?.user, entry?.username, entry?.pass, entry?.password,
+        ].filter((v): v is string => typeof v === "string" && v.length > 0);
+
+        if (candidateKeys.includes(identifier)) {
+          // For SOCKS5 accounts, email may not exist; use inbound.remark
+          const email = entry.email || inbound.remark || entry.user || entry.username || "";
           return {
             inboundId: inbound.id,
-            email: client.email,
-            expiryTime: client.expiryTime || 0,
+            email,
+            expiryTime: entry.expiryTime || 0,
+            isSocks5: Array.isArray(settings.accounts) && settings.accounts.includes(entry),
           };
         }
       }
