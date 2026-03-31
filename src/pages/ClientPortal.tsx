@@ -15,7 +15,7 @@ import {
   QrCode,
   Upload,
 } from "lucide-react";
-import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment, getPlans, getOrders } from "@/lib/api";
+import { getPublicConfig, lookupClient, createOrder, checkOrderStatus, verifyCryptoPayment, getPlans, getOrders, getExchangeRates } from "@/lib/api";
 
 interface PublicConfig {
   price_month: number;
@@ -92,6 +92,8 @@ export default function ClientPortal() {
   const [checkoutData, setCheckoutData] = useState<{ months: number; price: number; planName: string } | null>(null);
   const [selectedMethod, setSelectedMethod] = useState("");
   const [cryptoPrice, setCryptoPrice] = useState(0);
+  const [exchangeRates, setExchangeRates] = useState<{ usdtCny: number; trxCny: number } | null>(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
   const [qrStatus, setQrStatus] = useState("");
   const [orderId, setOrderId] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -250,11 +252,38 @@ export default function ClientPortal() {
     setTab("checkout");
   };
 
-  const handleSelectCrypto = (method: string) => {
+  const handleSelectCrypto = async (method: string) => {
     setSelectedMethod(method);
-    if (checkoutData) {
+    if (!checkoutData) return;
+
+    // Fetch exchange rates if not cached
+    if (!exchangeRates) {
+      setRatesLoading(true);
+      try {
+        const rates = await getExchangeRates();
+        if (rates?.usdtCny && rates?.trxCny) {
+          setExchangeRates({ usdtCny: rates.usdtCny, trxCny: rates.trxCny });
+          const rate = method === "usdt" ? rates.usdtCny : rates.trxCny;
+          const converted = checkoutData.price / rate;
+          // Add small random offset for unique amount matching
+          const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
+          setCryptoPrice(Number((converted + rand).toFixed(4)));
+        } else {
+          // Fallback: use price directly with offset
+          const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
+          setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
+        }
+      } catch {
+        const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
+        setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
+      } finally {
+        setRatesLoading(false);
+      }
+    } else {
+      const rate = method === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny;
+      const converted = checkoutData.price / rate;
       const rand = (Math.floor(Math.random() * 10) + 10) / 10000;
-      setCryptoPrice(Number((checkoutData.price + rand).toFixed(4)));
+      setCryptoPrice(Number((converted + rand).toFixed(4)));
     }
   };
 
@@ -830,11 +859,20 @@ export default function ClientPortal() {
                         </button>
                       )}
 
-                      {["usdt", "trx"].includes(selectedMethod) && (
+                      {ratesLoading && (
+                        <div className="text-center text-muted-foreground py-4 animate-pulse">正在获取实时汇率...</div>
+                      )}
+
+                      {["usdt", "trx"].includes(selectedMethod) && !ratesLoading && (
                         <div className="bg-card border-2 border-border rounded-2xl p-8 text-center animate-fade-in shadow-sm">
                           <div className="bg-warning/10 text-warning p-3 rounded-lg mb-4 text-sm font-bold border border-warning/20">
                             ⚠️ 防撞单机制：请严格按照下方显示的精确金额付款，否则系统无法自动到账！
                           </div>
+                          {exchangeRates && (
+                            <p className="text-xs text-muted-foreground mb-2">
+                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥{(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
+                            </p>
+                          )}
                           <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
                           <div className="text-4xl font-extrabold text-client-primary mb-6">{cryptoPrice}</div>
                           <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
@@ -865,6 +903,11 @@ export default function ClientPortal() {
                           <div className="bg-success/10 text-success p-3 rounded-lg mb-4 text-sm font-bold border border-success/20">
                             ✅ 订单已创建，请转账后点击验证
                           </div>
+                          {exchangeRates && (
+                            <p className="text-xs text-muted-foreground mb-2">
+                              实时汇率 (币安)：1 {selectedMethod.toUpperCase()} ≈ ¥{(selectedMethod === "usdt" ? exchangeRates.usdtCny : exchangeRates.trxCny).toFixed(4)}
+                            </p>
+                          )}
                           <p className="text-muted-foreground mb-2">应付总额 ({selectedMethod.toUpperCase()})</p>
                           <div className="text-4xl font-extrabold text-client-primary mb-4">{cryptoPrice}</div>
                           <div className="bg-muted p-4 rounded-lg break-all font-mono text-sm text-muted-foreground mb-6 border border-border">
