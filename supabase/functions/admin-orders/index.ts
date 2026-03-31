@@ -52,11 +52,18 @@ async function getUuidRemarkMap(panelUrl: string, panelUser: string, panelPass: 
     for (const inbound of inboundsData.obj) {
       try {
         const settings = JSON.parse(inbound.settings || "{}");
-        const clients = settings.clients || [];
-        for (const client of clients) {
-          if (client.id) map[client.id] = client.email || "";
-          if (client.password) map[client.password] = client.email || "";
-          if (client.username) map[client.username] = client.email || "";
+        const entries = [
+          ...(Array.isArray(settings.clients) ? settings.clients : []),
+          ...(Array.isArray(settings.accounts) ? settings.accounts : []),
+        ];
+
+        for (const entry of entries) {
+          const remark = entry.email || entry.user || entry.username || "";
+          const candidateKeys = [entry.id, entry.email, entry.user, entry.username, entry.pass, entry.password]
+            .filter((value): value is string => typeof value === "string" && value.length > 0);
+          for (const key of candidateKeys) {
+            map[key] = remark;
+          }
         }
       } catch {}
     }
