@@ -429,10 +429,12 @@ Deno.serve(async (req) => {
 
       // Extend expiry via 3x-ui
       let finalStatus = "paid";
+      let clientRemark = "";
       const cookie = await login3xui(config.panel_url, config.panel_user, config.panel_pass);
       if (cookie) {
         const client = await findClient(config.panel_url, cookie, order.uuid);
         if (client) {
+          clientRemark = client.email || "";
           const success = await extendExpiry(config.panel_url, cookie, client.inboundId, client.email, client.expiryTime, order.months, client.isSocks5);
           if (success) {
             await supabase.from("orders").update({ status: "fulfilled", fulfilled_at: new Date().toISOString() }).eq("id", order.id);
@@ -463,6 +465,7 @@ Deno.serve(async (req) => {
                   <table style="width:100%;border-collapse:collapse;margin-top:16px;">
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">订单号</td><td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">${order.trade_no || order.id}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">用户UUID</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.uuid}</td></tr>
+                    <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">用户备注</td><td style="padding:8px;border-bottom:1px solid #eee;">${clientRemark || '未找到'}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">套餐</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.plan_name}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">金额</td><td style="padding:8px;border-bottom:1px solid #eee;">¥${order.amount}</td></tr>
                     <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#666;">时长</td><td style="padding:8px;border-bottom:1px solid #eee;">${order.months} 个月</td></tr>
