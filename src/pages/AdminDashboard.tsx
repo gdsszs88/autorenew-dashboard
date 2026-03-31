@@ -94,6 +94,8 @@ const defaultConfig: AdminConfigData = {
   qqQrcodeUrl: "",
   telegramLink: "",
   videoEmbed: "",
+  resendApiKey: "",
+  notifyEmail: "",
 };
 
 export default function AdminDashboard() {
