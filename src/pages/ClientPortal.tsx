@@ -932,11 +932,24 @@ export default function ClientPortal() {
                             ✅ 订单已创建，请扫码支付
                           </div>
                           {qrCodeUrl ? (
-                            <img
-                              src={qrCodeUrl}
-                              alt="支付二维码"
-                              className="w-48 h-48 mx-auto mb-4 rounded-xl border border-border"
-                            />
+                            <div className="mb-4">
+                              <img
+                                src={qrCodeUrl}
+                                alt="支付二维码"
+                                className="w-48 h-48 mx-auto rounded-xl border border-border"
+                              />
+                              {selectedMethod === "alipay" && payUrl && (
+                                <a
+                                  href={payUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center gap-2 mt-3 bg-[#1677FF] text-white font-bold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                                >
+                                  <Smartphone className="w-4 h-4" />
+                                  手机浏览器点此跳转支付宝支付
+                                </a>
+                              )}
+                            </div>
                           ) : payUrl ? (
                             <div className="mb-4">
                               <a
