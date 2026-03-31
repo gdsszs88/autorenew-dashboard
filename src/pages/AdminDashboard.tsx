@@ -476,6 +476,137 @@ export default function AdminDashboard() {
               </div>
             </div>
           </TabsContent>
+
+          {/* 订单管理 */}
+          <TabsContent value="orders">
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-accent border-b border-border pb-3">
+                <ClipboardList className="w-5 h-5 mr-2" /> 订单管理
+              </h2>
+
+              {/* Search & Filter */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="搜索 UUID / 套餐名 / 邮箱..."
+                    value={ordersSearch}
+                    onChange={e => setOrdersSearch(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { setOrdersPage(1); loadOrders(1, ordersSearch, ordersStatus); } }}
+                    className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-accent outline-none text-sm"
+                  />
+                </div>
+                <select
+                  value={ordersStatus}
+                  onChange={e => { setOrdersStatus(e.target.value); setOrdersPage(1); loadOrders(1, ordersSearch, e.target.value); }}
+                  className="border border-input px-3 py-2 rounded-lg bg-background text-sm focus:ring-2 focus:ring-accent outline-none min-w-[120px]"
+                >
+                  <option value="all">全部状态</option>
+                  <option value="pending">待支付</option>
+                  <option value="paid">已支付</option>
+                  <option value="fulfilled">已完成</option>
+                  <option value="expired">已过期</option>
+                </select>
+                <button
+                  onClick={() => { setOrdersPage(1); loadOrders(1, ordersSearch, ordersStatus); }}
+                  className="bg-accent text-accent-foreground px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-colors text-sm"
+                >
+                  搜索
+                </button>
+              </div>
+
+              {ordersLoading ? (
+                <div className="text-center text-muted-foreground py-12">加载中...</div>
+              ) : orders.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12">暂无订单记录</div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-muted-foreground">
+                          <th className="py-3 px-2 font-semibold">UUID</th>
+                          <th className="py-3 px-2 font-semibold">套餐</th>
+                          <th className="py-3 px-2 font-semibold">金额</th>
+                          <th className="py-3 px-2 font-semibold">支付方式</th>
+                          <th className="py-3 px-2 font-semibold">状态</th>
+                          <th className="py-3 px-2 font-semibold">时间</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map(order => (
+                          <tr key={order.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                            <td className="py-3 px-2 font-mono text-xs max-w-[140px] truncate" title={order.uuid}>{order.uuid.slice(0, 8)}...</td>
+                            <td className="py-3 px-2">
+                              <span className="font-medium">{order.plan_name}</span>
+                              <span className="text-muted-foreground text-xs ml-1">({order.months}个月)</span>
+                            </td>
+                            <td className="py-3 px-2">
+                              {order.crypto_amount ? (
+                                <span>{order.crypto_amount} {order.crypto_currency}</span>
+                              ) : (
+                                <span>¥{order.amount}</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                order.payment_method === "wechat" ? "bg-success/10 text-success" :
+                                order.payment_method === "alipay" ? "bg-primary/10 text-primary" :
+                                "bg-accent/10 text-accent"
+                              }`}>
+                                {order.payment_method === "wechat" ? "微信" :
+                                 order.payment_method === "alipay" ? "支付宝" :
+                                 order.payment_method === "crypto_usdt" ? "USDT" :
+                                 order.payment_method === "crypto_trx" ? "TRX" : order.payment_method}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
+                                order.status === "fulfilled" ? "bg-success/10 text-success" :
+                                order.status === "paid" ? "bg-primary/10 text-primary" :
+                                order.status === "expired" ? "bg-destructive/10 text-destructive" :
+                                "bg-warning/10 text-warning"
+                              }`}>
+                                {order.status === "fulfilled" ? "✅ 已完成" :
+                                 order.status === "paid" ? "💰 已支付" :
+                                 order.status === "expired" ? "⏰ 已过期" : "⏳ 待支付"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(order.created_at).toLocaleString("zh-CN")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                    <span className="text-sm text-muted-foreground">共 {ordersTotal} 条记录</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { const p = ordersPage - 1; setOrdersPage(p); loadOrders(p); }}
+                        disabled={ordersPage <= 1}
+                        className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm font-medium px-2">第 {ordersPage} / {Math.max(1, Math.ceil(ordersTotal / 20))} 页</span>
+                      <button
+                        onClick={() => { const p = ordersPage + 1; setOrdersPage(p); loadOrders(p); }}
+                        disabled={ordersPage >= Math.ceil(ordersTotal / 20)}
+                        className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
