@@ -984,20 +984,21 @@ export default function ClientPortal() {
                               alt="支付二维码"
                               className="w-48 h-48 mx-auto mb-4 rounded-xl border border-border"
                             />
-                          ) : payUrl ? (
+                          ) : (
+                            <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-4">
+                              <QrCode className="w-12 h-12 text-muted-foreground" />
+                            </div>
+                          )}
+                          {selectedMethod === "alipay" && payUrl && (
                             <div className="mb-4">
                               <a
                                 href={payUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block bg-client-primary text-client-primary-foreground font-bold px-6 py-3 rounded-xl hover:opacity-90"
+                                className="inline-flex items-center justify-center gap-2 bg-[hsl(var(--client-primary))] text-[hsl(var(--client-primary-foreground))] font-bold px-6 py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity"
                               >
-                                点击打开支付页面
+                                📱 手机浏览器点此跳转支付宝支付
                               </a>
-                            </div>
-                          ) : (
-                            <div className="w-48 h-48 bg-muted border border-border mx-auto rounded-xl flex items-center justify-center mb-4">
-                              <QrCode className="w-12 h-12 text-muted-foreground" />
                             </div>
                           )}
                           <p className="text-muted-foreground font-bold mb-2">
