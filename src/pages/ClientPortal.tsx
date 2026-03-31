@@ -173,6 +173,7 @@ export default function ClientPortal() {
           expiryDate: res.expiryDate || Date.now() + 30 * 86400000,
           trafficUsed: res.trafficUsed ?? 0,
           trafficTotal: res.trafficTotal ?? 100,
+          email: res.email || "",
         });
         setLogged(true);
       } else {
