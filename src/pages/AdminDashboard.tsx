@@ -598,7 +598,16 @@ export default function AdminDashboard() {
                               <input type="checkbox" checked={selectedOrders.has(order.id)}
                                 onChange={() => toggleSelectOrder(order.id)} className="w-4 h-4 rounded cursor-pointer" />
                             </td>
-                            <td className="py-3 px-2 font-mono text-xs max-w-[140px] truncate" title={order.uuid}>{order.uuid.slice(0, 8)}...</td>
+                            <td className="py-3 px-2">
+                              <div className="flex items-center gap-1">
+                                <span className="font-mono text-xs max-w-[120px] truncate" title={order.uuid}>{order.uuid.slice(0, 8)}...</span>
+                                <button onClick={() => { navigator.clipboard.writeText(order.uuid); }} title="复制 UUID"
+                                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                </button>
+                              </div>
+                              {order.email && <div className="text-xs text-muted-foreground mt-0.5">{order.email}</div>}
+                            </td>
                             <td className="py-3 px-2">
                               <span className="font-medium">{order.plan_name}</span>
                               <span className="text-muted-foreground text-xs ml-1">({order.months}个月)</span>
