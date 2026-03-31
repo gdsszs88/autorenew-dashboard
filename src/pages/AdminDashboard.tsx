@@ -27,6 +27,9 @@ interface AdminConfigData {
   cryptoKey: string;
   cryptoUsdt: boolean;
   cryptoTrx: boolean;
+  tawkId: string;
+  qqQrcodeUrl: string;
+  telegramLink: string;
 }
 
 interface Plan {
