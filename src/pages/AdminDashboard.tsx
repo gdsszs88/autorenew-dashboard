@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings, Server, QrCode, Bitcoin, CheckCircle2, Plus, Trash2, Package, ClipboardList, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan, adminGetOrders } from "@/lib/api";
+import { getAdminConfig, saveAdminConfig, testPanelConnection, adminGetPlans, adminCreatePlan, adminUpdatePlan, adminDeletePlan, adminGetOrders, adminDeleteOrder } from "@/lib/api";
 
 interface AdminConfigData {
   panelUrl: string;
@@ -135,6 +135,20 @@ export default function AdminDashboard() {
       if (res?.total != null) setOrdersTotal(res.total);
     } catch {}
     setOrdersLoading(false);
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("确定删除该订单？")) return;
+    const key = `del-order-${orderId}`;
+    setBtnStatus(prev => ({ ...prev, [key]: "删除中..." }));
+    try {
+      await adminDeleteOrder(token, orderId);
+      setOrders(orders.filter(o => o.id !== orderId));
+      setOrdersTotal(prev => prev - 1);
+    } catch {
+      setBtnStatus(prev => ({ ...prev, [key]: "❌ 失败" }));
+      setTimeout(() => setBtnStatus(prev => ({ ...prev, [key]: "" })), 2000);
+    }
   };
 
   const setBtnLoading = (key: string, text: string) => {
@@ -532,6 +546,7 @@ export default function AdminDashboard() {
                           <th className="py-3 px-2 font-semibold">支付方式</th>
                           <th className="py-3 px-2 font-semibold">状态</th>
                           <th className="py-3 px-2 font-semibold">时间</th>
+                          <th className="py-3 px-2 font-semibold">操作</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -575,6 +590,14 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-3 px-2 text-xs text-muted-foreground whitespace-nowrap">
                               {new Date(order.created_at).toLocaleString("zh-CN")}
+                            </td>
+                            <td className="py-3 px-2">
+                              <button
+                                onClick={() => handleDeleteOrder(order.id)}
+                                className="bg-destructive/10 text-destructive px-2 py-1 rounded-lg text-xs font-bold hover:bg-destructive/20 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </td>
                           </tr>
                         ))}

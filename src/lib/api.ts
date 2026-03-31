@@ -95,6 +95,10 @@ export async function adminGetOrders(token: string, params?: { page?: number; pa
   return callEdgeFunction("admin-orders", { action: "list", token, ...params });
 }
 
+export async function adminDeleteOrder(token: string, orderId: string) {
+  return callEdgeFunction("admin-orders", { action: "delete", token, orderId });
+}
+
 // Get orders for a UUID
 export async function getOrders(uuid: string) {
   const { data, error } = await supabase

@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, token, page, pageSize, search, statusFilter } = await req.json();
+    const { action, token, page, pageSize, search, statusFilter, orderId } = await req.json();
 
     const configId = verifyToken(token);
     if (!configId) {
@@ -61,6 +61,20 @@ Deno.serve(async (req) => {
 
       if (error) throw error;
       return new Response(JSON.stringify({ orders: data, total: count }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete") {
+      if (!orderId) {
+        return new Response(JSON.stringify({ error: "缺少 orderId" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error } = await supabase.from("orders").delete().eq("id", orderId);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
