@@ -31,6 +31,8 @@ interface AdminConfigData {
   qqQrcodeUrl: string;
   telegramLink: string;
   videoEmbed: string;
+  resendApiKey: string;
+  notifyEmail: string;
 }
 
 interface Plan {
