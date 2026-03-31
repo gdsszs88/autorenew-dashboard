@@ -36,6 +36,7 @@ interface ClientData {
   expiryDate: number;
   trafficUsed: number;
   trafficTotal: number;
+  email?: string;
 }
 
 interface PlanItem {
