@@ -99,6 +99,10 @@ export async function adminDeleteOrder(token: string, orderId: string) {
   return callEdgeFunction("admin-orders", { action: "delete", token, orderId });
 }
 
+export async function adminBatchDeleteOrders(token: string, orderIds: string[]) {
+  return callEdgeFunction("admin-orders", { action: "batch-delete", token, orderIds });
+}
+
 // Get orders for a UUID
 export async function getOrders(uuid: string) {
   const { data, error } = await supabase

@@ -79,6 +79,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "batch-delete") {
+      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+        return new Response(JSON.stringify({ error: "缺少 orderIds" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error } = await supabase.from("orders").delete().in("id", orderIds);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true, deleted: orderIds.length }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
