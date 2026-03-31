@@ -97,13 +97,15 @@ async function getInbounds(panelUrl: string, cookie: string) {
 function findClientByIdentifier(inboundsData: any, identifier: string) {
   if (!inboundsData?.success || !inboundsData?.obj) return null;
 
-  for (const inbound of inboundsData.obj) {
+   for (const inbound of inboundsData.obj) {
     try {
       const settings = JSON.parse(inbound.settings || "{}");
       const entries = [
         ...(Array.isArray(settings.clients) ? settings.clients : []),
         ...(Array.isArray(settings.accounts) ? settings.accounts : []),
       ];
+
+      console.log(`Inbound #${inbound.id} protocol=${inbound.protocol} entries=${entries.length} keys=${JSON.stringify(entries.map((e:any) => ({id:e.id,email:e.email,user:e.user,username:e.username,pass:e.pass,password:e.password})))}`);
 
       for (const entry of entries) {
         const candidateKeys = [
@@ -117,14 +119,29 @@ function findClientByIdentifier(inboundsData: any, identifier: string) {
 
         if (!candidateKeys.includes(identifier)) continue;
 
+        // For remark: prefer clientStats.email (3x-ui stores remark there)
         const clientStats = inbound.clientStats?.find((s: any) => {
           const statsKey = typeof s?.email === "string" ? s.email : "";
           return statsKey.length > 0 && candidateKeys.includes(statsKey);
         });
 
+        console.log(`Matched entry: ${JSON.stringify(entry)}, clientStats: ${JSON.stringify(clientStats)}`);
+
+        // Remark priority: clientStats.email > entry.email (but skip if email equals identifier to avoid showing username as remark)
+        let remark = "";
+        if (clientStats?.email && clientStats.email !== identifier) {
+          remark = clientStats.email;
+        } else if (entry.email && entry.email !== identifier) {
+          remark = entry.email;
+        } else if (clientStats?.email) {
+          remark = clientStats.email;
+        } else {
+          remark = entry.email || entry.user || entry.username || "";
+        }
+
         return {
           found: true,
-          email: entry.email || clientStats?.email || entry.user || entry.username || "",
+          email: remark,
           expiryTime: entry.expiryTime || clientStats?.expiryTime || inbound.expiryTime || 0,
           up: clientStats?.up || 0,
           down: clientStats?.down || 0,
