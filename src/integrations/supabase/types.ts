@@ -44,6 +44,8 @@ export type Database = {
           price_year: number
           qq_qrcode_url: string
           resend_api_key: string
+          sales_inbound_id: number
+          sales_protocol: string
           tawk_id: string
           telegram_link: string
           updated_at: string
@@ -78,6 +80,8 @@ export type Database = {
           price_year?: number
           qq_qrcode_url?: string
           resend_api_key?: string
+          sales_inbound_id?: number
+          sales_protocol?: string
           tawk_id?: string
           telegram_link?: string
           updated_at?: string
@@ -112,6 +116,8 @@ export type Database = {
           price_year?: number
           qq_qrcode_url?: string
           resend_api_key?: string
+          sales_inbound_id?: number
+          sales_protocol?: string
           tawk_id?: string
           telegram_link?: string
           updated_at?: string

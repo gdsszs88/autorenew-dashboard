@@ -108,6 +108,11 @@ export async function adminBatchDeleteOrders(token: string, orderIds: string[]) 
   return callEdgeFunction("admin-orders", { action: "batch-delete", token, orderIds });
 }
 
+// Create client (new purchase)
+export async function createClientOnPanel(orderId: string) {
+  return callEdgeFunction("create-client", { orderId });
+}
+
 // Get orders for a UUID
 export async function getOrders(uuid: string) {
   const { data, error } = await supabase
