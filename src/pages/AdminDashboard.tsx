@@ -98,6 +98,8 @@ const defaultConfig: AdminConfigData = {
   videoEmbed: "",
   resendApiKey: "",
   notifyEmail: "",
+  salesInboundId: 1,
+  salesProtocol: "mixed",
 };
 
 export default function AdminDashboard() {
