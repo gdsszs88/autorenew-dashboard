@@ -1,0 +1,2 @@
+ALTER TABLE public.admin_config ADD COLUMN IF NOT EXISTS sales_inbound_id integer NOT NULL DEFAULT 1;
+ALTER TABLE public.admin_config ADD COLUMN IF NOT EXISTS sales_protocol text NOT NULL DEFAULT 'mixed';
