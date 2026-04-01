@@ -80,6 +80,8 @@ Deno.serve(async (req) => {
         videoEmbed: data.video_embed || "",
         resendApiKey: data.resend_api_key || "",
         notifyEmail: data.notify_email || "",
+        salesInboundId: data.sales_inbound_id ?? 1,
+        salesProtocol: data.sales_protocol ?? "mixed",
       };
 
       return new Response(JSON.stringify({ config: frontendConfig }), {
