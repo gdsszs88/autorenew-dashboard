@@ -33,6 +33,8 @@ interface AdminConfigData {
   videoEmbed: string;
   resendApiKey: string;
   notifyEmail: string;
+  salesInboundId: number;
+  salesProtocol: string;
 }
 
 interface Plan {
