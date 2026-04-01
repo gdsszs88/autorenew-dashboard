@@ -303,12 +303,15 @@ export default function AdminDashboard() {
 
         {/* Tab Menu */}
         <Tabs defaultValue="panel" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 h-12 bg-card border border-border rounded-2xl p-1">
+          <TabsList className="w-full grid grid-cols-5 h-12 bg-card border border-border rounded-2xl p-1">
             <TabsTrigger value="panel" className="rounded-xl data-[state=active]:bg-admin-primary data-[state=active]:text-admin-primary-foreground font-bold text-xs sm:text-sm">
               <Server className="w-4 h-4 mr-1 sm:mr-2" /> 面板对接
             </TabsTrigger>
             <TabsTrigger value="payment" className="rounded-xl data-[state=active]:bg-warning data-[state=active]:text-warning-foreground font-bold text-xs sm:text-sm">
               <QrCode className="w-4 h-4 mr-1 sm:mr-2" /> 支付网关
+            </TabsTrigger>
+            <TabsTrigger value="sales" className="rounded-xl data-[state=active]:bg-indigo-500 data-[state=active]:text-white font-bold text-xs sm:text-sm">
+              <ShoppingCart className="w-4 h-4 mr-1 sm:mr-2" /> 新开通售卖
             </TabsTrigger>
             <TabsTrigger value="products" className="rounded-xl data-[state=active]:bg-client-primary data-[state=active]:text-client-primary-foreground font-bold text-xs sm:text-sm">
               <Package className="w-4 h-4 mr-1 sm:mr-2" /> 商品管理
