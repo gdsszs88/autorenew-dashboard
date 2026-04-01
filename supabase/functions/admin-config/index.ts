@@ -119,6 +119,8 @@ Deno.serve(async (req) => {
         video_embed: config.videoEmbed,
         resend_api_key: config.resendApiKey,
         notify_email: config.notifyEmail,
+        sales_inbound_id: config.salesInboundId,
+        sales_protocol: config.salesProtocol,
       };
 
       const { error } = await supabase
