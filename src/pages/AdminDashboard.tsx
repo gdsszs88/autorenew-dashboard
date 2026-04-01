@@ -628,6 +628,42 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          {/* 新开通售卖设置 */}
+          <TabsContent value="sales">
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-indigo-600 border-b border-border pb-3">
+                <ShoppingCart className="w-5 h-5 mr-2" /> 新开通售卖设置
+              </h2>
+
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mt-4">
+                <h3 className="text-sm font-bold text-indigo-800 mb-3 flex items-center">
+                  <ShoppingCart className="w-4 h-4 mr-1" /> 自动化售卖(新购)设置
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-indigo-700 mb-1">默认开通入站 ID</label>
+                    <input
+                      type="number" value={config.salesInboundId} onChange={(e) => setConfig({ ...config, salesInboundId: Number(e.target.value) })}
+                      placeholder="填入面板里的入站ID"
+                      className="w-full border border-indigo-200 p-2 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-indigo-700 mb-1">默认协议类型</label>
+                    <select
+                      value={config.salesProtocol} onChange={(e) => setConfig({ ...config, salesProtocol: e.target.value })}
+                      className="w-full border border-indigo-200 p-2 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
+                    >
+                      <option value="mixed">Mixed (用户名+密码)</option>
+                      <option value="vless">Vless (UUID)</option>
+                      <option value="vmess">Vmess (UUID)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
           {/* 订单管理 */}
           <TabsContent value="orders">
             <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
